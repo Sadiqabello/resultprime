@@ -69,3 +69,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Report card / print pages */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  body {
+    background: white;
+  }
+}

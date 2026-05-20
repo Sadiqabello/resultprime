@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { BroadsheetView } from "../service";
 import { ordinal } from "@/lib/utils";
 import {
@@ -24,6 +25,7 @@ export function Broadsheet({ view }: { view: BroadsheetView }) {
             ))}
             <TableHead className="text-right">Avg</TableHead>
             <TableHead className="text-right">Pos</TableHead>
+            <TableHead className="text-right">Card</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -55,6 +57,15 @@ export function Broadsheet({ view }: { view: BroadsheetView }) {
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {r.position == null ? "–" : ordinal(r.position)}
+              </TableCell>
+              <TableCell className="text-right">
+                <Link
+                  href={`/print/report/${r.enrollmentId}`}
+                  target="_blank"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Report
+                </Link>
               </TableCell>
             </TableRow>
           ))}

@@ -19,4 +19,14 @@ export const tenancyRepository = {
       .eq("school_id", schoolId)
       .single();
   },
+
+  /** The current user's own school (name + access status). RLS-scoped. */
+  async getSchool(schoolId: string) {
+    const supabase = await createClient();
+    return supabase
+      .from("schools")
+      .select("id, name, status")
+      .eq("id", schoolId)
+      .maybeSingle();
+  },
 };

@@ -111,7 +111,7 @@ export const scoresService = {
         scoresRepository.listSubjectsLite(schoolId),
         scoresRepository.loadEnrollments(schoolId, cs.class_id, cs.term_id),
         scoresRepository.loadScores(schoolId, classSubjectId, cs.term_id),
-        scoresRepository.getApprovalState(schoolId, classSubjectId, cs.term_id),
+        scoresRepository.getApprovalState(schoolId, cs.class_id, cs.term_id),
       ]);
 
     const studentIds = (enrollments ?? []).map((e) => e.student_id);
@@ -174,7 +174,7 @@ export const scoresService = {
       return err("FORBIDDEN", "This subject isn't assigned to you.");
     }
 
-    const { data: approval } = await scoresRepository.getApprovalState(schoolId, data.classSubjectId, data.termId);
+    const { data: approval } = await scoresRepository.getApprovalState(schoolId, cs.class_id, data.termId);
     if (LOCKED_STATES.includes(approval?.state ?? "")) {
       return err("RESULT_LOCKED", "These results are locked. Return or unlock them to edit.");
     }

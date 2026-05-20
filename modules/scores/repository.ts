@@ -90,14 +90,15 @@ export const scoresRepository = {
       .is("deleted_at", null);
   },
 
-  async getApprovalState(schoolId: string, classSubjectId: string, termId: string) {
+  /** Class-level approval state (drives score-sheet locking). */
+  async getApprovalState(schoolId: string, classId: string, termId: string) {
     const sb = await createClient();
     return sb
       .from("approvals")
       .select("state")
       .eq("school_id", schoolId)
-      .eq("subject_type", "class_subject_result")
-      .eq("subject_id", classSubjectId)
+      .eq("subject_type", "class")
+      .eq("subject_id", classId)
       .eq("term_id", termId)
       .maybeSingle();
   },
