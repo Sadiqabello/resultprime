@@ -2,22 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
+import { friendlyMessage } from "@/lib/errors";
 import { resultsService } from "./service";
-import type { EngineConfig } from "@/lib/result-engine";
-import type { Result } from "@/lib/errors";
+
+export type ComputeResult =
+  | { ok: true; subjects: number; students: number }
+  | { ok: false; error: string };
 
 /**
- * Trigger computation for one class-subject. For whole-class or whole-school
- * recomputes, enqueue a background job instead of running inline (§14.6).
+ * Compute a whole class's results for the current term. For very large schools
+ * this should move to a background job (§14.6); inline is fine at class scale.
  */
-export async function computeClassSubjectResults(args: {
-  classSubjectId: string;
-  subjectId: string;
-  termId: string;
-  config: EngineConfig;
-}): Promise<Result<{ count: number }>> {
+export async function computeClass(classId: string): Promise<ComputeResult> {
   const ctx = await requireAuth();
-  const result = await resultsService.computeClassSubject(ctx, args);
-  if (result.ok) revalidatePath("/results");
-  return result;
+  const res = await resultsService.computeClass(ctx, classId);
+  if (!res.ok) return { ok: false, error: friendlyMessage(res.error) };
+  revalidatePath("/results");
+  return { ok: true, subjects: res.data.subjects, students: res.data.students };
 }
