@@ -1,0 +1,2 @@
+# Student-specific UI (forms, table columns, dialogs) lives here.
+# Keep cross-cutting primitives in /components; keep domain UI close to its module.
