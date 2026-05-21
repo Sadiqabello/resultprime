@@ -29,4 +29,18 @@ export const tenancyRepository = {
       .eq("id", schoolId)
       .maybeSingle();
   },
+
+  /** Update school name (RLS: school_admin via schools_update). */
+  async updateSchoolName(schoolId: string, name: string) {
+    const supabase = await createClient();
+    return supabase.from("schools").update({ name }).eq("id", schoolId);
+  },
+
+  /** Upsert branding/policy settings (RLS: school_admin via school_settings_*). */
+  async upsertSettings(schoolId: string, fields: Record<string, unknown>) {
+    const supabase = await createClient();
+    return supabase
+      .from("school_settings")
+      .upsert({ school_id: schoolId, ...fields }, { onConflict: "school_id" });
+  },
 };

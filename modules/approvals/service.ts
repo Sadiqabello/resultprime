@@ -3,6 +3,7 @@ import { can, type AuthContext } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import type { ApprovalState } from "@/config/constants";
+import { notificationsService } from "@/modules/notifications/service";
 import { approvalsRepository } from "./repository";
 
 const NEXT: Record<ApprovalState, ApprovalState[]> = {
@@ -111,6 +112,8 @@ export const approvalsService = {
       const { data: csIds } = await approvalsRepository.getClassSubjectIds(schoolId, classId, termId);
       await approvalsRepository.setResultsStatus(schoolId, (csIds ?? []).map((c) => c.id), termId, "published");
       await approvalsRepository.setTermResultsStatus(schoolId, classId, termId, "published");
+      // Best-effort: notify students/guardians/form-teacher (never blocks publish).
+      await notificationsService.notifyResultsPublished({ schoolId, classId, termId, termName: term.name as string });
     }
 
     logger.info("approvals.transition", { schoolId, userId: ctx.userId, action: `approvals.${to}`, classId, from, to });

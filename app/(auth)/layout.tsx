@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { tenancyService } from "@/modules/tenancy/service";
+import { notificationsService } from "@/modules/notifications/service";
 import { AppShell } from "@/components/layout/app-shell";
 import { SuspendedScreen } from "@/components/layout/suspended-screen";
 
@@ -21,5 +22,7 @@ export default async function AuthLayout({
     return <SuspendedScreen schoolName={schoolRes.data.name} status={schoolRes.data.status} />;
   }
 
-  return <AppShell ctx={ctx}>{children}</AppShell>;
+  const unread = await notificationsService.unreadCount(ctx);
+
+  return <AppShell ctx={ctx} unread={unread}>{children}</AppShell>;
 }

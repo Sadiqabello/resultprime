@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Download } from "lucide-react";
 import QRCode from "qrcode";
 import { getAuthContext } from "@/modules/auth/service";
 import { reportsService } from "@/modules/reports/service";
@@ -41,7 +42,15 @@ export default async function PrintReportPage({
         <Link href="/results" className="text-sm text-muted-foreground hover:underline">
           ← Back to results
         </Link>
-        <PrintButton />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/reports/${enrollmentId}/pdf`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+          >
+            <Download className="size-4" /> Download PDF
+          </a>
+          <PrintButton />
+        </div>
       </div>
       <div className="mx-auto max-w-[820px] bg-white shadow-sm print:max-w-none print:shadow-none">
         <ReportCard view={view} qrSvg={qrSvg} verifyUrl={verifyUrl} />

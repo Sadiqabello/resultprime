@@ -2,21 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
-import { can } from "@/lib/authz";
-import { err, ok, type Result } from "@/lib/errors";
-import { schoolSettingsSchema, type SchoolSettingsInput } from "./schema";
+import { friendlyMessage } from "@/lib/errors";
+import { tenancyService } from "./service";
+import type { SchoolSettingsInput } from "./schema";
 
-/** Update the current school's settings (School Admin only). */
+export type SaveBrandingResult = { ok: true } | { ok: false; error: string };
+
+/** Update the current school's profile + branding (School Admin only). */
 export async function updateSchoolSettings(
   input: SchoolSettingsInput,
-): Promise<Result<null>> {
+): Promise<SaveBrandingResult> {
   const ctx = await requireAuth();
-  if (!can(ctx, "school.configure")) return err("FORBIDDEN", "Not allowed.");
-
-  const parsed = schoolSettingsSchema.safeParse(input);
-  if (!parsed.success) return err("VALIDATION", "Invalid settings.");
-
-  // TODO: persist via tenancyRepository.updateSettings(ctx.schoolId, parsed.data)
+  const res = await tenancyService.saveBranding(ctx, input);
+  if (!res.ok) return { ok: false, error: friendlyMessage(res.error) };
   revalidatePath("/settings");
-  return ok(null);
+  revalidatePath("/(auth)", "layout"); // re-theme the app shell from new colours
+  return { ok: true };
 }

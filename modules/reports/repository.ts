@@ -23,7 +23,7 @@ export const reportsRepository = {
     return sb
       .from("term_results")
       .select(
-        "id, average, class_position, class_size, subjects_count, total_obtained, total_obtainable, grade_overall, class_teacher_remark, principal_remark, status, published_at",
+        "id, average, class_position, class_size, subjects_count, total_obtained, total_obtainable, grade_overall, class_teacher_remark, principal_remark, attendance_present, attendance_total, status, published_at",
       )
       .eq("school_id", schoolId)
       .eq("enrollment_id", enrollmentId)
@@ -83,6 +83,89 @@ export const reportsRepository = {
   async listSubjectsLite(schoolId: string) {
     const sb = await createClient();
     return sb.from("subjects").select("id, name").eq("school_id", schoolId).is("deleted_at", null);
+  },
+
+  async getCurrentTerm(schoolId: string) {
+    const sb = await createClient();
+    return sb
+      .from("terms")
+      .select("id, name")
+      .eq("school_id", schoolId)
+      .eq("is_current", true)
+      .is("deleted_at", null)
+      .maybeSingle();
+  },
+
+  async getClassMeta(schoolId: string, classId: string) {
+    const sb = await createClient();
+    return sb
+      .from("classes")
+      .select("id, name, arm, form_teacher_id")
+      .eq("school_id", schoolId)
+      .eq("id", classId)
+      .is("deleted_at", null)
+      .maybeSingle();
+  },
+
+  /** Term-result extras (remarks/attendance) for a class, for the editor. */
+  async listClassExtras(schoolId: string, classId: string, termId: string) {
+    const sb = await createClient();
+    return sb
+      .from("term_results")
+      .select(
+        "enrollment_id, class_teacher_remark, principal_remark, attendance_present, attendance_total, average, class_position",
+      )
+      .eq("school_id", schoolId)
+      .eq("class_id", classId)
+      .eq("term_id", termId)
+      .is("deleted_at", null);
+  },
+
+  async loadEnrollments(schoolId: string, classId: string, termId: string) {
+    const sb = await createClient();
+    return sb
+      .from("enrollments")
+      .select("id, student_id")
+      .eq("school_id", schoolId)
+      .eq("class_id", classId)
+      .eq("term_id", termId)
+      .eq("status", "active")
+      .is("deleted_at", null);
+  },
+
+  async loadStudents(schoolId: string, ids: string[]) {
+    const sb = await createClient();
+    return sb
+      .from("students")
+      .select("id, first_name, last_name, other_names, admission_no")
+      .eq("school_id", schoolId)
+      .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  },
+
+  /**
+   * Update ONLY the remark/attendance columns of a term_result. Uses the
+   * service-role client so form teachers (who lack `can_manage_results`) can
+   * write report extras; the SERVICE enforces capability + form-teacher/role
+   * scope + tenant before calling this, and only these columns are ever set.
+   */
+  async updateExtras(
+    schoolId: string,
+    enrollmentId: string,
+    termId: string,
+    fields: {
+      class_teacher_remark: string | null;
+      principal_remark: string | null;
+      attendance_present: number | null;
+      attendance_total: number | null;
+    },
+  ) {
+    const admin = createAdminClient();
+    return admin
+      .from("term_results")
+      .update(fields)
+      .eq("school_id", schoolId)
+      .eq("enrollment_id", enrollmentId)
+      .eq("term_id", termId);
   },
 
   /** Public verification — service-role, published-only, summary fields only. */

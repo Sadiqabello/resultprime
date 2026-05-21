@@ -11,7 +11,9 @@ import {
   Calculator,
   CheckSquare,
   FileText,
+  PencilLine,
   Upload,
+  Bell,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -36,18 +38,26 @@ const NAV: NavItem[] = [
   { href: "/results", label: "Results", icon: Calculator, permission: "results.read" },
   { href: "/approvals", label: "Approvals", icon: CheckSquare, permission: "results.approve" },
   { href: "/reports", label: "Reports", icon: FileText, permission: "results.export" },
+  { href: "/reports/remarks", label: "Remarks", icon: PencilLine, permission: "class.remarks.write" },
   { href: "/imports", label: "Bulk Import", icon: Upload, permission: "students.write" },
+  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings, permission: "academics.manage" },
 ];
 
-export function Sidebar({ ctx }: { ctx: AuthContext }) {
+export function Sidebar({ ctx, unread = 0 }: { ctx: AuthContext; unread?: number }) {
   const pathname = usePathname();
   const items = NAV.filter((i) => !i.permission || can(ctx, i.permission));
+
+  // The single active item is the most specific href that prefixes the path.
+  const activeHref = items
+    .map((i) => i.href)
+    .filter((h) => pathname === h || pathname.startsWith(h + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-1 border-r p-3">
       {items.map(({ href, label, icon: Icon }) => {
-        const active = pathname.startsWith(href);
+        const active = href === activeHref;
         return (
           <Link
             key={href}
@@ -60,7 +70,12 @@ export function Sidebar({ ctx }: { ctx: AuthContext }) {
             )}
           >
             <Icon className="size-4" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {href === "/notifications" && unread > 0 ? (
+              <span className="flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[10px] font-medium text-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            ) : null}
           </Link>
         );
       })}

@@ -1,6 +1,7 @@
 import "server-only";
+import { can, type AuthContext } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
-import type { AuthContext } from "@/lib/authz";
+import { schoolSettingsSchema, type SchoolSettingsInput } from "./schema";
 import { tenancyRepository } from "./repository";
 
 export interface CurrentSchool {
@@ -8,6 +9,15 @@ export interface CurrentSchool {
   status: string;
   /** Active access? false when suspended/cancelled. */
   accessible: boolean;
+}
+
+export interface BrandingView {
+  schoolName: string;
+  logoUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  approvalPolicy: "one_step" | "two_step";
+  feeGatingEnabled: boolean;
 }
 
 /**
@@ -26,6 +36,50 @@ export const tenancyService = {
     const { data, error } = await tenancyRepository.getSettings(schoolId);
     if (error) return err("INTERNAL", error.message);
     return ok(data);
+  },
+
+  /** Current branding + policy for the settings form. */
+  async getBranding(ctx: AuthContext): Promise<Result<BrandingView>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    const [{ data: school }, { data: settings }] = await Promise.all([
+      tenancyRepository.getSchool(ctx.schoolId),
+      tenancyRepository.getSettings(ctx.schoolId),
+    ]);
+    return ok({
+      schoolName: (school?.name as string) ?? "",
+      logoUrl: (settings?.logo_url as string | null) ?? "",
+      primaryColor: (settings?.primary_color as string | null) ?? "#0077b6",
+      secondaryColor: (settings?.secondary_color as string | null) ?? "#023e8a",
+      approvalPolicy: (settings?.approval_policy as "one_step" | "two_step" | null) ?? "one_step",
+      feeGatingEnabled: Boolean(settings?.fee_gating_enabled),
+    });
+  },
+
+  /** Persist branding + policy. School Admin only (also enforced by RLS). */
+  async saveBranding(ctx: AuthContext, input: SchoolSettingsInput): Promise<Result<null>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "school.configure")) return err("FORBIDDEN", "Not allowed.");
+
+    const parsed = schoolSettingsSchema.safeParse(input);
+    if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid settings.");
+    const d = parsed.data;
+
+    if (d.schoolName) {
+      const { error } = await tenancyRepository.updateSchoolName(ctx.schoolId, d.schoolName);
+      if (error) return err("INTERNAL", error.message);
+    }
+
+    const { error } = await tenancyRepository.upsertSettings(ctx.schoolId, {
+      logo_url: d.logoUrl ?? null,
+      primary_color: d.primaryColor ?? null,
+      secondary_color: d.secondaryColor ?? null,
+      timezone: d.timezone,
+      locale: d.locale,
+      approval_policy: d.approvalPolicy,
+      fee_gating_enabled: d.feeGatingEnabled,
+    });
+    if (error) return err("INTERNAL", error.message);
+    return ok(null);
   },
 
   /**

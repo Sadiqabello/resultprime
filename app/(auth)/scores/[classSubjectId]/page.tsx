@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet } from "lucide-react";
 import { getAuthContext } from "@/modules/auth/service";
 import { scoresService } from "@/modules/scores/service";
 import { ScoreGrid } from "@/modules/scores/components/score-grid";
@@ -49,7 +49,17 @@ export default async function ScoreSheetPage({
             <h1 className="text-2xl font-semibold tracking-tight">{sheet.subjectName}</h1>
             <p className="text-sm text-muted-foreground">{sheet.classLabel}</p>
           </div>
-          <Badge variant="secondary" className="h-7 px-3">{sheet.termName} Term</Badge>
+          <div className="flex items-center gap-3">
+            {!sheet.locked ? (
+              <Link
+                href={`/imports/${classSubjectId}`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+              >
+                <FileSpreadsheet className="size-4" /> Import from Excel
+              </Link>
+            ) : null}
+            <Badge variant="secondary" className="h-7 px-3">{sheet.termName} Term</Badge>
+          </div>
         </div>
       </div>
 

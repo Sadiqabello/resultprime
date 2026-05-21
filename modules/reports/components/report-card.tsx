@@ -67,6 +67,12 @@ export function ReportCard({ view, qrSvg, verifyUrl }: { view: ReportCardView; q
           label="Overall"
           value={view.summary.gradeOverall ?? (view.summary.average == null ? "—" : "")}
         />
+        {view.attendance.total != null ? (
+          <Field
+            label="Attendance"
+            value={`${view.attendance.present ?? 0} / ${view.attendance.total} days`}
+          />
+        ) : null}
       </section>
 
       {/* Subjects */}

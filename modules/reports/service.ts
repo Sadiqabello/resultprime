@@ -1,7 +1,39 @@
 import "server-only";
-import { can, type AuthContext } from "@/lib/authz";
+import { can, hasRole, type AuthContext } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
+import { logger } from "@/lib/logger";
+import { auditService } from "@/modules/audit/service";
+import { saveExtrasSchema, type SaveExtrasInput } from "./schema";
 import { reportsRepository } from "./repository";
+
+export interface ExtrasRow {
+  enrollmentId: string;
+  name: string;
+  admissionNo: string;
+  classTeacherRemark: string;
+  principalRemark: string;
+  attendancePresent: number | null;
+  attendanceTotal: number | null;
+  average: number | null;
+  position: number | null;
+}
+export interface ClassExtrasView {
+  classLabel: string;
+  termName: string | null;
+  rows: ExtrasRow[];
+}
+
+/** Form teacher of the class, or a school-wide results/admin role. */
+function canEditExtras(ctx: AuthContext, formTeacherId: string | null): boolean {
+  if (!can(ctx, "class.remarks.write")) return false;
+  return (
+    formTeacherId === ctx.userId ||
+    hasRole(ctx, "school_admin") ||
+    hasRole(ctx, "principal") ||
+    hasRole(ctx, "vice_principal") ||
+    hasRole(ctx, "exam_officer")
+  );
+}
 
 export interface ReportSubject {
   name: string;
@@ -30,6 +62,7 @@ export interface ReportCardView {
     totalObtainable: number;
     gradeOverall: string | null;
   };
+  attendance: { present: number | null; total: number | null };
   remarks: { classTeacher: string | null; principal: string | null };
   subjects: ReportSubject[];
 }
@@ -114,12 +147,156 @@ export const reportsService = {
         totalObtainable: Number(tr?.total_obtainable) || 0,
         gradeOverall: (tr?.grade_overall as string | null) ?? null,
       },
+      attendance: {
+        present: (tr?.attendance_present as number | null) ?? null,
+        total: (tr?.attendance_total as number | null) ?? null,
+      },
       remarks: {
         classTeacher: (tr?.class_teacher_remark as string | null) ?? null,
         principal: (tr?.principal_remark as string | null) ?? null,
       },
       subjects,
     });
+  },
+
+  /** Roster of a class with current remarks/attendance, for the editor. */
+  async getClassExtras(ctx: AuthContext, classId: string): Promise<Result<ClassExtrasView>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "class.remarks.write")) return err("FORBIDDEN", "Not allowed.");
+    const schoolId = ctx.schoolId;
+
+    const { data: klass } = await reportsRepository.getClassMeta(schoolId, classId);
+    if (!klass) return err("NOT_FOUND", "Class not found.");
+    if (!canEditExtras(ctx, (klass.form_teacher_id as string | null) ?? null)) {
+      return err("FORBIDDEN", "You can only edit remarks for your own class.");
+    }
+
+    const { data: term } = await reportsRepository.getCurrentTerm(schoolId);
+    const label = classLabel(klass);
+    if (!term) return ok({ classLabel: label, termName: null, rows: [] });
+    const termId = term.id as string;
+
+    const [{ data: extras }, { data: enr }] = await Promise.all([
+      reportsRepository.listClassExtras(schoolId, classId, termId),
+      reportsRepository.loadEnrollments(schoolId, classId, termId),
+    ]);
+    const { data: studs } = await reportsRepository.loadStudents(
+      schoolId,
+      (enr ?? []).map((e) => e.student_id as string),
+    );
+    const studByEnrollment = new Map(
+      (enr ?? []).map((e) => {
+        const s = (studs ?? []).find((x) => x.id === e.student_id);
+        return [
+          e.id as string,
+          {
+            name: s ? [s.last_name, s.first_name, s.other_names].filter(Boolean).join(" ") : "—",
+            admissionNo: (s?.admission_no as string) ?? "",
+            sortKey: (s?.last_name as string) ?? "",
+          },
+        ];
+      }),
+    );
+    const extrasByEnrollment = new Map((extras ?? []).map((x) => [x.enrollment_id, x]));
+
+    const rows: ExtrasRow[] = (enr ?? [])
+      .map((e) => {
+        const s = studByEnrollment.get(e.id);
+        const x = extrasByEnrollment.get(e.id);
+        return {
+          enrollmentId: e.id as string,
+          name: s?.name ?? "—",
+          admissionNo: s?.admissionNo ?? "",
+          sortKey: s?.sortKey ?? "",
+          classTeacherRemark: (x?.class_teacher_remark as string | null) ?? "",
+          principalRemark: (x?.principal_remark as string | null) ?? "",
+          attendancePresent: (x?.attendance_present as number | null) ?? null,
+          attendanceTotal: (x?.attendance_total as number | null) ?? null,
+          average: (x?.average as number | null) ?? null,
+          position: (x?.class_position as number | null) ?? null,
+        };
+      })
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      .map(({ sortKey: _s, ...r }) => r);
+
+    return ok({ classLabel: label, termName: term.name as string, rows });
+  },
+
+  /** Persist remarks/attendance for a class's students (form teacher / principal). */
+  async saveClassExtras(ctx: AuthContext, input: SaveExtrasInput): Promise<Result<{ saved: number }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "class.remarks.write")) return err("FORBIDDEN", "Not allowed.");
+    const schoolId = ctx.schoolId;
+
+    const parsed = saveExtrasSchema.safeParse(input);
+    if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid remarks.");
+    const data = parsed.data;
+
+    const { data: klass } = await reportsRepository.getClassMeta(schoolId, data.classId);
+    if (!klass) return err("NOT_FOUND", "Class not found.");
+    if (!canEditExtras(ctx, (klass.form_teacher_id as string | null) ?? null)) {
+      return err("FORBIDDEN", "You can only edit remarks for your own class.");
+    }
+
+    const { data: term } = await reportsRepository.getCurrentTerm(schoolId);
+    if (!term) return err("CONFLICT", "No active term.");
+    const termId = term.id as string;
+
+    // Only update enrollments that actually have a computed term_result.
+    const { data: extras } = await reportsRepository.listClassExtras(schoolId, data.classId, termId);
+    const valid = new Set((extras ?? []).map((x) => x.enrollment_id));
+
+    let saved = 0;
+    for (const r of data.rows) {
+      if (!valid.has(r.enrollmentId)) continue; // results not computed for this student yet
+      const { error } = await reportsRepository.updateExtras(schoolId, r.enrollmentId, termId, {
+        class_teacher_remark: r.classTeacherRemark || null,
+        principal_remark: r.principalRemark || null,
+        attendance_present: r.attendancePresent,
+        attendance_total: r.attendanceTotal,
+      });
+      if (error) return err("INTERNAL", error.message);
+      saved++;
+    }
+
+    await auditService.record({
+      schoolId,
+      actorId: ctx.userId,
+      action: "results.remarks_update",
+      entityType: "class",
+      entityId: data.classId,
+      metadata: { termId, students: saved },
+    });
+    logger.info("reports.extras_saved", { schoolId, userId: ctx.userId, action: "results.remarks_update", classId: data.classId, saved });
+    return ok({ saved });
+  },
+
+  /**
+   * Every computed report card for a class this term — drives the batch print
+   * route and the merged PDF. Loops the single-card builder (fine for a class;
+   * whole-school batches belong in a background job, §11.3/§14.6).
+   */
+  async getClassReportCards(
+    ctx: AuthContext,
+    classId: string,
+  ): Promise<Result<{ classLabel: string; termName: string | null; cards: ReportCardView[] }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "results.read")) return err("FORBIDDEN", "Not allowed.");
+    const schoolId = ctx.schoolId;
+
+    const { data: klass } = await reportsRepository.getClassMeta(schoolId, classId);
+    const label = classLabel(klass);
+    const { data: term } = await reportsRepository.getCurrentTerm(schoolId);
+    if (!term) return ok({ classLabel: label, termName: null, cards: [] });
+
+    const { data: enr } = await reportsRepository.loadEnrollments(schoolId, classId, term.id as string);
+    const cards: ReportCardView[] = [];
+    for (const e of enr ?? []) {
+      const r = await this.getReportCard(ctx, e.id as string);
+      if (r.ok && r.data.computed) cards.push(r.data);
+    }
+    cards.sort((a, b) => a.student.name.localeCompare(b.student.name));
+    return ok({ classLabel: label, termName: term.name as string, cards });
   },
 
   /** Public QR verification — published-only summary, or null. No auth. */

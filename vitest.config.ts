@@ -10,6 +10,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
+      // Next.js runtime guards — no-ops under the Node test runner.
+      "server-only": path.resolve(__dirname, "./tests/stubs/empty.ts"),
+      "client-only": path.resolve(__dirname, "./tests/stubs/empty.ts"),
     },
   },
 });

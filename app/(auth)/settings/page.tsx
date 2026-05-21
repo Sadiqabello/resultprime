@@ -6,6 +6,8 @@ import { setCurrentSession, setCurrentTerm } from "@/modules/academics/actions";
 import { CreateSessionForm } from "@/modules/academics/components/create-session-form";
 import { gradingService } from "@/modules/grading/service";
 import { GradingEditor } from "@/modules/grading/components/grading-editor";
+import { tenancyService } from "@/modules/tenancy/service";
+import { BrandingForm } from "@/modules/tenancy/components/branding-form";
 import { can } from "@/lib/authz";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,9 +37,26 @@ export default async function SettingsPage() {
   const gradingResult = await gradingService.getConfig(ctx);
   const grading = gradingResult.ok ? gradingResult.data : null;
 
+  const canBrand = can(ctx, "school.configure");
+  const brandingResult = canBrand ? await tenancyService.getBranding(ctx) : null;
+  const branding = brandingResult?.ok ? brandingResult.data : null;
+
   return (
     <div className="max-w-4xl space-y-6">
-      <div>
+      {branding ? (
+        <section className="space-y-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">School &amp; Branding</h1>
+            <p className="text-sm text-muted-foreground">
+              Your name, colours and logo appear on report cards and across the app. The approval
+              policy controls how results are signed off.
+            </p>
+          </div>
+          <BrandingForm initial={branding} />
+        </section>
+      ) : null}
+
+      <div className={branding ? "border-t pt-8" : undefined}>
         <h1 className="text-2xl font-semibold tracking-tight">Sessions &amp; Terms</h1>
         <p className="text-sm text-muted-foreground">
           The academic calendar everything else is scoped to. The active term drives
