@@ -20,6 +20,7 @@ export { aggregateSubject, obtainableTotal, round } from "./aggregate";
 export { resolveGrade, validateGradeBands } from "./grade";
 export { rank } from "./rank";
 export { aggregateTerm } from "./term-aggregate";
+export { aggregateCumulative, type CumulativeAggregate } from "./cumulative";
 export { evaluatePromotion } from "./promotion";
 export { resolveAverageRemark } from "./remarks";
 
