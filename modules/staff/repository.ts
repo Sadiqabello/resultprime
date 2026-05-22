@@ -58,6 +58,22 @@ export const staffRepository = {
       .insert({ user_id: userId, role_id: roleId, school_id: schoolId });
   },
 
+  async get(schoolId: string, id: string) {
+    const sb = await createClient();
+    return sb
+      .from("staff")
+      .select("id, full_name, staff_no, phone, qualification, is_teaching, status")
+      .eq("school_id", schoolId)
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle();
+  },
+
+  async update(schoolId: string, id: string, fields: Record<string, unknown>) {
+    const sb = await createClient();
+    return sb.from("staff").update(fields).eq("school_id", schoolId).eq("id", id);
+  },
+
   async softDelete(schoolId: string, id: string) {
     const sb = await createClient();
     return sb

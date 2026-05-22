@@ -55,15 +55,20 @@ export default async function DashboardPage() {
   const data = await dashboardService.getOverview(ctx);
   const isStaff = can(ctx, "students.read");
 
-  // Students & parents: a calm, read-only landing (full portal is Phase 2).
+  // Students & parents: send them to their results portal.
   if (!isStaff) {
     return (
-      <section className="mx-auto max-w-md space-y-2 pt-8 text-center">
+      <section className="mx-auto max-w-md space-y-4 pt-8 text-center">
         <h1 className="text-2xl font-semibold">Hello, {data.firstName}</h1>
         <p className="text-sm text-muted-foreground">
-          Your published results from {data.schoolName} will appear here once
-          released.
+          View {data.schoolName}&apos;s published results in your results portal.
         </p>
+        <Link
+          href="/portal"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          Go to my results <ArrowRight className="size-3.5" />
+        </Link>
       </section>
     );
   }

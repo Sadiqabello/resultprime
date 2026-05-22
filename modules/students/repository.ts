@@ -79,6 +79,26 @@ export const studentsRepository = {
     });
   },
 
+  async get(schoolId: string, id: string) {
+    const sb = await createClient();
+    return sb
+      .from("students")
+      .select("id, admission_no, first_name, last_name, other_names, gender, date_of_birth, current_class_id, status, photo_url, user_id")
+      .eq("school_id", schoolId)
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle();
+  },
+
+  async update(schoolId: string, id: string, fields: Record<string, unknown>, updatedBy: string) {
+    const sb = await createClient();
+    return sb
+      .from("students")
+      .update({ ...fields, updated_by: updatedBy })
+      .eq("school_id", schoolId)
+      .eq("id", id);
+  },
+
   async softDelete(schoolId: string, id: string, deletedBy: string) {
     const sb = await createClient();
     return sb

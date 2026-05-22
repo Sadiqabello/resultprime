@@ -22,6 +22,18 @@ export const ROLE_LABELS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
   school_admin: "School Admin",
 };
 
+import { uuid } from "@/lib/validation";
+
+/** Edit basic staff details (role/staff-no changes are handled separately). */
+export const updateStaffSchema = z.object({
+  id: uuid,
+  fullName: nonEmptyString,
+  phone: optionalString,
+  qualification: optionalString,
+  isTeaching: z.coerce.boolean().default(true),
+});
+export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
+
 export const addStaffSchema = z.object({
   fullName: nonEmptyString,
   staffNo: nonEmptyString,

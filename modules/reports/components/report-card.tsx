@@ -113,6 +113,21 @@ export function ReportCard({ view, qrSvg, verifyUrl }: { view: ReportCardView; q
         </tbody>
       </table>
 
+      {/* Traits / behaviour */}
+      {view.traits.length > 0 ? (
+        <section className="mt-5">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Behaviour &amp; skills</p>
+          <div className="grid grid-cols-2 gap-x-8 text-[12px] sm:grid-cols-3">
+            {view.traits.map((t) => (
+              <div key={t.name} className="flex items-center justify-between border-b border-dotted border-neutral-200 py-0.5">
+                <span className="capitalize">{t.name}</span>
+                <span className="font-medium tabular-nums">{t.rating}/5</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* Remarks */}
       <section className="mt-5 space-y-2 text-sm">
         <Remark label="Class teacher's remark" value={view.remarks.classTeacher} />
@@ -123,7 +138,7 @@ export function ReportCard({ view, qrSvg, verifyUrl }: { view: ReportCardView; q
       <footer className="mt-8 flex items-end justify-between gap-6 border-t pt-4">
         <div className="flex items-end gap-8 text-xs text-neutral-500">
           <SignatureLine label="Class teacher" />
-          <SignatureLine label="Principal" />
+          <SignatureLine label="Principal" imageUrl={view.signatureUrl} />
         </div>
         {view.published && qrSvg ? (
           <div className="text-center text-[10px] text-neutral-500">
@@ -162,10 +177,15 @@ function Remark({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function SignatureLine({ label }: { label: string }) {
+function SignatureLine({ label, imageUrl }: { label: string; imageUrl?: string | null }) {
   return (
     <div>
-      <div className="h-8 w-32 border-b border-neutral-400" />
+      <div className="flex h-8 w-32 items-end justify-center border-b border-neutral-400">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt="" className="max-h-8 object-contain" />
+        ) : null}
+      </div>
       <span className="text-[10px]">{label}</span>
     </div>
   );

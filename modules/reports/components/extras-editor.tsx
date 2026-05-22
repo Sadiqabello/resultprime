@@ -31,6 +31,7 @@ export function ExtrasEditor({ classId, view }: { classId: string; view: ClassEx
           principalRemark: r.principalRemark,
           attendancePresent: r.attendancePresent,
           attendanceTotal: r.attendanceTotal,
+          traitRatings: r.traitRatings,
         })),
       });
       setStatus(res.ok ? { ok: true, n: res.saved } : { error: res.error });
@@ -108,6 +109,33 @@ export function ExtrasEditor({ classId, view }: { classId: string; view: ClassEx
               />
               <span className="text-muted-foreground">days</span>
             </div>
+
+            {view.traitDefs.length > 0 ? (
+              <div className="mt-3">
+                <span className="text-xs text-muted-foreground">Behavioural traits (1–5)</span>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-2">
+                  {view.traitDefs.map((t) => (
+                    <label key={t.name} className="flex items-center gap-1.5 text-xs">
+                      <span>{t.name}</span>
+                      <select
+                        aria-label={`${r.name} ${t.name}`}
+                        value={r.traitRatings[t.name] ?? ""}
+                        onChange={(e) => {
+                          const next = { ...r.traitRatings };
+                          if (e.target.value === "") delete next[t.name];
+                          else next[t.name] = Number(e.target.value);
+                          patch(i, { traitRatings: next });
+                        }}
+                        className="h-7 rounded border border-input bg-transparent px-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="">—</option>
+                        {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

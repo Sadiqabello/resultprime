@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { friendlyMessage } from "@/lib/errors";
 import { signInSchema, registerSchoolSchema } from "./schema";
-import { registerSchoolAndAdmin } from "./service";
+import { getAuthContext, registerSchoolAndAdmin } from "./service";
 
 /**
  * Plain, serializable state for useActionState in the client forms. (We return
@@ -12,13 +12,6 @@ import { registerSchoolAndAdmin } from "./service";
  * instances don't serialize reliably across the server-action boundary.)
  */
 export type AuthFormState = { error: string } | null;
-
-/** Only allow same-origin relative redirects (no open-redirect via ?redirect=). */
-function safeRedirect(raw: FormDataEntryValue | null): string {
-  return typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//")
-    ? raw
-    : "/dashboard";
-}
 
 /** Sign in an existing user. On success, cookies are set and we redirect. */
 export async function signIn(
@@ -35,7 +28,15 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: "Invalid email or password." };
 
-  redirect(safeRedirect(formData.get("redirectTo")));
+  // Honour an explicit (safe) redirect; otherwise route by role.
+  const requested = formData.get("redirectTo");
+  if (typeof requested === "string" && requested.startsWith("/") && !requested.startsWith("//")) {
+    redirect(requested);
+  }
+  const ctx = await getAuthContext();
+  const consumerOnly =
+    !!ctx && ctx.roles.length > 0 && ctx.roles.every((r) => r === "student" || r === "parent");
+  redirect(consumerOnly ? "/portal" : "/dashboard");
 }
 
 /** Register a new school + first admin, then sign them in. */

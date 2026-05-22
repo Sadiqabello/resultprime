@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { staffService } from "@/modules/staff/service";
+import Link from "next/link";
 import { deleteStaff } from "@/modules/staff/actions";
 import { AddStaffForm } from "@/modules/staff/components/add-staff-form";
 import { can } from "@/lib/authz";
@@ -101,15 +102,13 @@ export default async function StaffPage() {
                   </TableCell>
                   {canManage ? (
                     <TableCell className="text-right">
-                      <form action={deleteStaff}>
-                        <input type="hidden" name="id" value={s.id} />
-                        <button
-                          type="submit"
-                          className="text-sm font-medium text-destructive hover:underline"
-                        >
-                          Remove
-                        </button>
-                      </form>
+                      <span className="flex items-center justify-end gap-3">
+                        <Link href={`/staff/${s.id}`} className="text-sm font-medium text-primary hover:underline">Edit</Link>
+                        <form action={deleteStaff}>
+                          <input type="hidden" name="id" value={s.id} />
+                          <button type="submit" className="text-sm font-medium text-destructive hover:underline">Remove</button>
+                        </form>
+                      </span>
                     </TableCell>
                   ) : null}
                 </TableRow>

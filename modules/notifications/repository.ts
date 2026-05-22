@@ -54,6 +54,15 @@ export const notificationsRepository = {
     return (guardians ?? []).map((g) => g.user_id).filter((u): u is string => Boolean(u));
   },
 
+  /** Email/phone for a set of users (RLS: staff may read users in their school). */
+  async loadUserContacts(userIds: string[]) {
+    const sb = await createClient();
+    return sb
+      .from("users")
+      .select("id, email, phone")
+      .in("id", userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+  },
+
   async insertMany(rows: Record<string, unknown>[]) {
     const sb = await createClient();
     return sb.from("notifications").insert(rows);

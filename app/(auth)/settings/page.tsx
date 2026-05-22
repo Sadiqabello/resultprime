@@ -6,6 +6,8 @@ import { setCurrentSession, setCurrentTerm } from "@/modules/academics/actions";
 import { CreateSessionForm } from "@/modules/academics/components/create-session-form";
 import { gradingService } from "@/modules/grading/service";
 import { GradingEditor } from "@/modules/grading/components/grading-editor";
+import { traitsService } from "@/modules/traits/service";
+import { TraitEditor } from "@/modules/traits/components/trait-editor";
 import { tenancyService } from "@/modules/tenancy/service";
 import { BrandingForm } from "@/modules/tenancy/components/branding-form";
 import { can } from "@/lib/authz";
@@ -36,6 +38,8 @@ export default async function SettingsPage() {
   const sessions = result.ok ? result.data : [];
   const gradingResult = await gradingService.getConfig(ctx);
   const grading = gradingResult.ok ? gradingResult.data : null;
+  const traitsResult = await traitsService.getConfig(ctx);
+  const traits = traitsResult.ok ? traitsResult.data : null;
 
   const canBrand = can(ctx, "school.configure");
   const brandingResult = canBrand ? await tenancyService.getBranding(ctx) : null;
@@ -134,6 +138,17 @@ export default async function SettingsPage() {
           </p>
         </div>
         {grading ? <GradingEditor initial={grading} /> : null}
+      </section>
+
+      <section id="traits" className="scroll-mt-20 space-y-4 border-t pt-8">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Behavioural traits</h2>
+          <p className="text-sm text-muted-foreground">
+            Affective &amp; psychomotor traits shown on report cards. Rate each student on the{" "}
+            Remarks page.
+          </p>
+        </div>
+        {traits ? <TraitEditor initial={traits} /> : null}
       </section>
     </div>
   );

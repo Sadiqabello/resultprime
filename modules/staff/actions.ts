@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
 import { friendlyMessage } from "@/lib/errors";
 import { staffService } from "./service";
-import { addStaffSchema } from "./schema";
+import { addStaffSchema, updateStaffSchema } from "./schema";
 
 export type StaffFormState = { ok: true } | { error: string } | null;
 
@@ -27,6 +27,23 @@ export async function addStaff(
   const res = await staffService.add(ctx, parsed.data);
   if (!res.ok) return { error: friendlyMessage(res.error) };
   revalidatePath("/staff");
+  return { ok: true };
+}
+
+export async function updateStaff(_prev: StaffFormState, formData: FormData): Promise<StaffFormState> {
+  const ctx = await requireAuth();
+  const parsed = updateStaffSchema.safeParse({
+    id: formData.get("id"),
+    fullName: formData.get("fullName"),
+    phone: formData.get("phone"),
+    qualification: formData.get("qualification"),
+    isTeaching: formData.get("isTeaching") === "on" || formData.get("isTeaching") === "true",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form." };
+  const res = await staffService.update(ctx, parsed.data);
+  if (!res.ok) return { error: friendlyMessage(res.error) };
+  revalidatePath("/staff");
+  revalidatePath(`/staff/${parsed.data.id}`);
   return { ok: true };
 }
 

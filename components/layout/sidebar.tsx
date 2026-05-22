@@ -14,6 +14,7 @@ import {
   FileText,
   PencilLine,
   Wallet,
+  CreditCard,
   Upload,
   Bell,
   Settings,
@@ -45,6 +46,7 @@ const NAV: NavItem[] = [
   { href: "/fees", label: "Fees", icon: Wallet, permission: "fees.manage" },
   { href: "/imports", label: "Bulk Import", icon: Upload, permission: "students.write" },
   { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/subscription", label: "Subscription", icon: CreditCard, permission: "school.configure" },
   { href: "/settings", label: "Settings", icon: Settings, permission: "academics.manage" },
 ];
 

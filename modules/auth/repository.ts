@@ -29,6 +29,26 @@ export const authRepository = {
     return data.user;
   },
 
+  /**
+   * Create a confirmed login with claims and a random temp password — used to
+   * provision student/parent accounts without depending on email delivery. They
+   * sign in via a password reset / invite link once email is configured. The
+   * claims (school_id + roles) are the trust anchor for RLS.
+   */
+  async createLogin(email: string, schoolId: string, roles: Role[]) {
+    const admin = createAdminClient();
+    const password = `${crypto.randomUUID()}Aa1!`;
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: { school_id: schoolId, roles },
+      user_metadata: { school_id: schoolId },
+    });
+    if (error) throw error;
+    return data.user;
+  },
+
   /** Best-effort cleanup of a just-provisioned user when a later step fails. */
   async deleteUser(userId: string) {
     const admin = createAdminClient();

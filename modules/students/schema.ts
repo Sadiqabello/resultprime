@@ -24,3 +24,22 @@ export const createStudentSchema = z.object({
   classId: uuid,
 });
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
+
+/** Editing details (and the convenience current-class cache); not admission no. */
+export const updateStudentSchema = z.object({
+  id: uuid,
+  firstName: nonEmptyString,
+  lastName: nonEmptyString,
+  otherNames: optionalString,
+  gender: optionalGender,
+  dateOfBirth: optionalDate,
+  classId: uuid.optional(),
+});
+export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;
+
+const optionalEmail = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined),
+  z.string().email("Enter a valid email"),
+);
+export const studentLoginSchema = z.object({ id: uuid, email: optionalEmail });
+export type StudentLoginInput = z.infer<typeof studentLoginSchema>;

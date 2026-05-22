@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
-import { updateSchoolSettings } from "../actions";
+import { Check, Upload } from "lucide-react";
+import { updateSchoolSettings, uploadBrandingAsset } from "../actions";
 import type { BrandingView } from "../service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,25 @@ import { Label } from "@/components/ui/label";
 export function BrandingForm({ initial }: { initial: BrandingView }) {
   const [v, setV] = useState(initial);
   const [pending, start] = useTransition();
+  const [uploading, startUpload] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
   const set = <K extends keyof BrandingView>(k: K, val: BrandingView[K]) => {
     setV((s) => ({ ...s, [k]: val }));
     setStatus(null);
   };
+
+  function upload(kind: "logo" | "signature", file: File | null) {
+    if (!file) return;
+    setStatus(null);
+    const fd = new FormData();
+    fd.set("kind", kind);
+    fd.set("file", file);
+    startUpload(async () => {
+      const res = await uploadBrandingAsset(fd);
+      if (res.ok) set(kind === "logo" ? "logoUrl" : "principalSignatureUrl", res.url);
+      else setStatus({ error: res.error });
+    });
+  }
 
   function save() {
     setStatus(null);
@@ -23,6 +37,7 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
       const res = await updateSchoolSettings({
         schoolName: v.schoolName,
         logoUrl: v.logoUrl,
+        principalSignatureUrl: v.principalSignatureUrl,
         primaryColor: v.primaryColor,
         secondaryColor: v.secondaryColor,
         approvalPolicy: v.approvalPolicy,
@@ -42,14 +57,36 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
           <Input id="b-name" value={v.schoolName} onChange={(e) => set("schoolName", e.target.value)} />
         </div>
 
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="b-logo">Logo URL</Label>
-          <Input
-            id="b-logo"
-            value={v.logoUrl}
-            onChange={(e) => set("logoUrl", e.target.value)}
-            placeholder="https://…/logo.png"
-          />
+        <div className="space-y-2">
+          <Label>Logo</Label>
+          <div className="flex items-center gap-3">
+            {v.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.logoUrl} alt="" className="size-12 rounded border object-contain" />
+            ) : (
+              <span className="flex size-12 items-center justify-center rounded border text-xs text-muted-foreground">none</span>
+            )}
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent">
+              <Upload className="size-4" /> {uploading ? "Uploading…" : "Upload"}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => upload("logo", e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Principal&apos;s signature</Label>
+          <div className="flex items-center gap-3">
+            {v.principalSignatureUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.principalSignatureUrl} alt="" className="h-12 w-20 rounded border object-contain" />
+            ) : (
+              <span className="flex h-12 w-20 items-center justify-center rounded border text-xs text-muted-foreground">none</span>
+            )}
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent">
+              <Upload className="size-4" /> {uploading ? "Uploading…" : "Upload"}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => upload("signature", e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
         </div>
 
         <div className="space-y-2">

@@ -106,20 +106,20 @@ export default async function StudentsPage({
               {students.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{s.admissionNo}</TableCell>
-                  <TableCell className="font-medium">{s.fullName}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/students/${s.id}`} className="text-brand-950 hover:underline">{s.fullName}</Link>
+                  </TableCell>
                   <TableCell className="capitalize">{s.gender ?? "—"}</TableCell>
                   <TableCell>{s.classLabel ?? "—"}</TableCell>
                   {canManage ? (
                     <TableCell className="text-right">
-                      <form action={deleteStudent}>
-                        <input type="hidden" name="id" value={s.id} />
-                        <button
-                          type="submit"
-                          className="text-sm font-medium text-destructive hover:underline"
-                        >
-                          Remove
-                        </button>
-                      </form>
+                      <span className="flex items-center justify-end gap-3">
+                        <Link href={`/students/${s.id}`} className="text-sm font-medium text-primary hover:underline">Manage</Link>
+                        <form action={deleteStudent}>
+                          <input type="hidden" name="id" value={s.id} />
+                          <button type="submit" className="text-sm font-medium text-destructive hover:underline">Remove</button>
+                        </form>
+                      </span>
                     </TableCell>
                   ) : null}
                 </TableRow>

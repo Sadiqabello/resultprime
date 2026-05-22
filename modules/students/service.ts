@@ -2,7 +2,9 @@ import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { createStudentSchema, type CreateStudentInput } from "./schema";
+import { auditService } from "@/modules/audit/service";
+import { authRepository } from "@/modules/auth/repository";
+import { createStudentSchema, updateStudentSchema, studentLoginSchema, type CreateStudentInput, type UpdateStudentInput, type StudentLoginInput } from "./schema";
 import { studentsRepository } from "./repository";
 
 export interface StudentView {
@@ -11,6 +13,20 @@ export interface StudentView {
   fullName: string;
   gender: string | null;
   classLabel: string | null;
+}
+export interface StudentDetail {
+  id: string;
+  admissionNo: string;
+  firstName: string;
+  lastName: string;
+  otherNames: string | null;
+  gender: string | null;
+  dateOfBirth: string | null;
+  classId: string | null;
+  classLabel: string | null;
+  photoUrl: string | null;
+  hasLogin: boolean;
+  status: string;
 }
 export interface ClassOption {
   id: string;
@@ -86,6 +102,81 @@ export const studentsService = {
 
     logger.info("students.created", { schoolId: ctx.schoolId, studentId });
     return ok({ id: studentId });
+  },
+
+  async get(ctx: AuthContext, id: string): Promise<Result<StudentDetail>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "students.read")) return err("FORBIDDEN", "Not allowed.");
+    const [{ data: s }, { data: classes }] = await Promise.all([
+      studentsRepository.get(ctx.schoolId, id),
+      studentsRepository.listClasses(ctx.schoolId),
+    ]);
+    if (!s) return err("NOT_FOUND", "Student not found.");
+    const klass = (classes ?? []).find((c) => c.id === s.current_class_id);
+    return ok({
+      id: s.id as string,
+      admissionNo: s.admission_no as string,
+      firstName: s.first_name as string,
+      lastName: s.last_name as string,
+      otherNames: (s.other_names as string | null) ?? null,
+      gender: (s.gender as string | null) ?? null,
+      dateOfBirth: (s.date_of_birth as string | null) ?? null,
+      classId: (s.current_class_id as string | null) ?? null,
+      classLabel: klass ? classLabel(klass) : null,
+      photoUrl: (s.photo_url as string | null) ?? null,
+      hasLogin: Boolean(s.user_id),
+      status: s.status as string,
+    });
+  },
+
+  async update(ctx: AuthContext, input: UpdateStudentInput): Promise<Result<null>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const parsed = updateStudentSchema.safeParse(input);
+    if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid details.");
+    const d = parsed.data;
+    const { error } = await studentsRepository.update(
+      ctx.schoolId,
+      d.id,
+      {
+        first_name: d.firstName,
+        last_name: d.lastName,
+        other_names: d.otherNames ?? null,
+        gender: d.gender ?? null,
+        date_of_birth: d.dateOfBirth ?? null,
+        ...(d.classId ? { current_class_id: d.classId } : {}),
+      },
+      ctx.userId,
+    );
+    if (error) return err("INTERNAL", error.message);
+    return ok(null);
+  },
+
+  /** Provision a student login (role: student) and link it to the record. */
+  async createLogin(ctx: AuthContext, input: StudentLoginInput): Promise<Result<null>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const parsed = studentLoginSchema.safeParse(input);
+    if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Enter a valid email.");
+    try {
+      const user = await authRepository.createLogin(parsed.data.email, ctx.schoolId, ["student"]);
+      if (!user) return err("INTERNAL", "Could not create the login.");
+      const { error } = await studentsRepository.update(ctx.schoolId, parsed.data.id, { user_id: user.id }, ctx.userId);
+      if (error) return err("INTERNAL", error.message);
+      await auditService.record({ schoolId: ctx.schoolId, actorId: ctx.userId, action: "student.login_created", entityType: "student", entityId: parsed.data.id });
+      return ok(null);
+    } catch (e) {
+      const dup = /already|registered|exists/i.test((e as Error).message ?? "");
+      return dup ? err("CONFLICT", "An account with that email already exists.") : err("INTERNAL", "Could not create the login.");
+    }
+  },
+
+  async setPhotoUrl(ctx: AuthContext, id: string, url: string): Promise<Result<null>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const { error } = await studentsRepository.update(ctx.schoolId, id, { photo_url: url }, ctx.userId);
+    if (error) return err("INTERNAL", error.message);
+    return ok(null);
   },
 
   async remove(ctx: AuthContext, id: string): Promise<Result<null>> {

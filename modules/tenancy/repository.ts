@@ -1,14 +1,36 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Tenant lookups. `getBySlug` powers subdomain → school resolution (Phase 2)
- * and should be cached (slow-changing). Settings drive branding & policy.
+ * Tenant lookups. `getPublicBySlug` powers subdomain → school resolution and the
+ * branded (unauthenticated) login page, so it uses the service-role client and
+ * returns only public branding fields. Settings drive branding & policy.
  */
 export const tenancyRepository = {
   async getBySlug(slug: string) {
     const supabase = await createClient();
     return supabase.from("schools").select("*").eq("slug", slug).single();
+  },
+
+  /**
+   * Public branding for a subdomain — no auth (the login page is unauthenticated,
+   * and RLS would block reading another tenant). Service-role; safe fields only.
+   */
+  async getPublicBySlug(slug: string) {
+    const admin = createAdminClient();
+    const { data: school } = await admin
+      .from("schools")
+      .select("id, name, slug, status")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!school) return null;
+    const { data: settings } = await admin
+      .from("school_settings")
+      .select("logo_url, primary_color")
+      .eq("school_id", school.id)
+      .maybeSingle();
+    return { ...school, logo_url: settings?.logo_url ?? null, primary_color: settings?.primary_color ?? null };
   },
 
   async getSettings(schoolId: string) {
@@ -20,12 +42,12 @@ export const tenancyRepository = {
       .single();
   },
 
-  /** The current user's own school (name + access status). RLS-scoped. */
+  /** The current user's own school (name + slug + access status). RLS-scoped. */
   async getSchool(schoolId: string) {
     const supabase = await createClient();
     return supabase
       .from("schools")
-      .select("id, name, status")
+      .select("id, name, slug, status")
       .eq("id", schoolId)
       .maybeSingle();
   },

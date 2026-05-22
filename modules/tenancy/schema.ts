@@ -19,6 +19,10 @@ export const schoolSettingsSchema = z.object({
     (v) => v === undefined || /^https?:\/\//i.test(v),
     "Logo must be a URL (http/https)",
   ),
+  principalSignatureUrl: blankToUndef.refine(
+    (v) => v === undefined || /^https?:\/\//i.test(v),
+    "Signature must be a URL (http/https)",
+  ),
   primaryColor: hexColor,
   secondaryColor: hexColor,
   timezone: z.string().default("Africa/Lagos"),

@@ -23,7 +23,7 @@ export const reportsRepository = {
     return sb
       .from("term_results")
       .select(
-        "id, average, class_position, class_size, subjects_count, total_obtained, total_obtainable, grade_overall, class_teacher_remark, principal_remark, attendance_present, attendance_total, status, published_at",
+        "id, average, class_position, class_size, subjects_count, total_obtained, total_obtainable, grade_overall, class_teacher_remark, principal_remark, attendance_present, attendance_total, traits, status, published_at",
       )
       .eq("school_id", schoolId)
       .eq("enrollment_id", enrollmentId)
@@ -75,9 +75,20 @@ export const reportsRepository = {
     const sb = await createClient();
     return sb
       .from("school_settings")
-      .select("logo_url, primary_color")
+      .select("logo_url, primary_color, principal_signature_url")
       .eq("school_id", schoolId)
       .maybeSingle();
+  },
+
+  async listActiveTraits(schoolId: string) {
+    const sb = await createClient();
+    return sb
+      .from("trait_definitions")
+      .select("name, category, sort_order")
+      .eq("school_id", schoolId)
+      .eq("is_active", true)
+      .order("category", { ascending: true })
+      .order("sort_order", { ascending: true });
   },
 
   async listSubjectsLite(schoolId: string) {
@@ -113,7 +124,7 @@ export const reportsRepository = {
     return sb
       .from("term_results")
       .select(
-        "enrollment_id, class_teacher_remark, principal_remark, attendance_present, attendance_total, average, class_position",
+        "enrollment_id, class_teacher_remark, principal_remark, attendance_present, attendance_total, traits, average, class_position",
       )
       .eq("school_id", schoolId)
       .eq("class_id", classId)
@@ -157,6 +168,7 @@ export const reportsRepository = {
       principal_remark: string | null;
       attendance_present: number | null;
       attendance_total: number | null;
+      traits?: unknown;
     },
   ) {
     const admin = createAdminClient();

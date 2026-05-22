@@ -6,14 +6,24 @@ import { tenancyRepository } from "./repository";
 
 export interface CurrentSchool {
   name: string;
+  slug: string;
   status: string;
   /** Active access? false when suspended/cancelled. */
   accessible: boolean;
 }
 
+export interface PublicBranding {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+}
+
 export interface BrandingView {
   schoolName: string;
   logoUrl: string;
+  principalSignatureUrl: string;
   primaryColor: string;
   secondaryColor: string;
   approvalPolicy: "one_step" | "two_step";
@@ -32,6 +42,19 @@ export const tenancyService = {
     return ok(data);
   },
 
+  /** Public branding for a subdomain's login page (no auth). Null if unknown. */
+  async resolvePublicBranding(slug: string): Promise<PublicBranding | null> {
+    const row = await tenancyRepository.getPublicBySlug(slug);
+    if (!row || row.status === "suspended" || row.status === "cancelled") return null;
+    return {
+      id: row.id as string,
+      name: row.name as string,
+      slug: row.slug as string,
+      logoUrl: (row.logo_url as string | null) ?? null,
+      primaryColor: (row.primary_color as string | null) ?? null,
+    };
+  },
+
   async getSettings(schoolId: string) {
     const { data, error } = await tenancyRepository.getSettings(schoolId);
     if (error) return err("INTERNAL", error.message);
@@ -48,6 +71,7 @@ export const tenancyService = {
     return ok({
       schoolName: (school?.name as string) ?? "",
       logoUrl: (settings?.logo_url as string | null) ?? "",
+      principalSignatureUrl: (settings?.principal_signature_url as string | null) ?? "",
       primaryColor: (settings?.primary_color as string | null) ?? "#0077b6",
       secondaryColor: (settings?.secondary_color as string | null) ?? "#023e8a",
       approvalPolicy: (settings?.approval_policy as "one_step" | "two_step" | null) ?? "one_step",
@@ -71,6 +95,7 @@ export const tenancyService = {
 
     const { error } = await tenancyRepository.upsertSettings(ctx.schoolId, {
       logo_url: d.logoUrl ?? null,
+      principal_signature_url: d.principalSignatureUrl ?? null,
       primary_color: d.primaryColor ?? null,
       secondary_color: d.secondaryColor ?? null,
       timezone: d.timezone,
@@ -94,6 +119,7 @@ export const tenancyService = {
     const status = data.status as string;
     return ok({
       name: data.name as string,
+      slug: (data.slug as string) ?? "",
       status,
       accessible: status !== "suspended" && status !== "cancelled",
     });

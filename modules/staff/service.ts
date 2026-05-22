@@ -3,7 +3,7 @@ import { can, type AuthContext, type Role } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { authRepository } from "@/modules/auth/repository";
-import { addStaffSchema, ROLE_LABELS, type AddStaffInput } from "./schema";
+import { addStaffSchema, updateStaffSchema, ROLE_LABELS, type AddStaffInput, type UpdateStaffInput } from "./schema";
 import { staffRepository } from "./repository";
 
 export interface StaffView {
@@ -99,6 +99,37 @@ export const staffService = {
     }
 
     logger.info("staff.added", { schoolId, userId, invited: Boolean(data.email) });
+    return ok(null);
+  },
+
+  async get(ctx: AuthContext, id: string): Promise<Result<{ id: string; fullName: string; staffNo: string; phone: string | null; qualification: string | null; isTeaching: boolean }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "staff.read")) return err("FORBIDDEN", "Not allowed.");
+    const { data: s } = await staffRepository.get(ctx.schoolId, id);
+    if (!s) return err("NOT_FOUND", "Staff not found.");
+    return ok({
+      id: s.id as string,
+      fullName: s.full_name as string,
+      staffNo: s.staff_no as string,
+      phone: (s.phone as string | null) ?? null,
+      qualification: (s.qualification as string | null) ?? null,
+      isTeaching: Boolean(s.is_teaching),
+    });
+  },
+
+  async update(ctx: AuthContext, input: UpdateStaffInput): Promise<Result<null>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "staff.write")) return err("FORBIDDEN", "Not allowed.");
+    const parsed = updateStaffSchema.safeParse(input);
+    if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid details.");
+    const d = parsed.data;
+    const { error } = await staffRepository.update(ctx.schoolId, d.id, {
+      full_name: d.fullName,
+      phone: d.phone ?? null,
+      qualification: d.qualification ?? null,
+      is_teaching: d.isTeaching,
+    });
+    if (error) return err("INTERNAL", error.message);
     return ok(null);
   },
 

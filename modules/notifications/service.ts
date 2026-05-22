@@ -75,16 +75,23 @@ export const notificationsService = {
         logger.info("notifications.publish_no_recipients", { schoolId, classId });
         return;
       }
-      const rows = recipients.map((uid) => ({
-        school_id: schoolId,
-        recipient_user_id: uid,
-        channel: "in_app",
-        type: "results_published",
-        payload: { classId, className, termId, termName },
-      }));
+      const payload = { classId, className, termId, termName };
+
+      // in-app for everyone; email/WhatsApp additionally where we have contact.
+      const { data: contacts } = await notificationsRepository.loadUserContacts(recipients);
+      const contact = new Map((contacts ?? []).map((c) => [c.id, c]));
+
+      const rows: Record<string, unknown>[] = [];
+      for (const uid of recipients) {
+        rows.push({ school_id: schoolId, recipient_user_id: uid, channel: "in_app", type: "results_published", payload });
+        const c = contact.get(uid);
+        if (c?.email) rows.push({ school_id: schoolId, recipient_user_id: uid, channel: "email", type: "results_published", payload });
+        if (c?.phone) rows.push({ school_id: schoolId, recipient_user_id: uid, channel: "whatsapp", type: "results_published", payload });
+      }
+
       const { error } = await notificationsRepository.insertMany(rows);
       if (error) logger.error("notifications.publish_insert_failed", { schoolId, classId, error: error.message });
-      else logger.info("notifications.published", { schoolId, classId, recipients: rows.length });
+      else logger.info("notifications.published", { schoolId, classId, recipients: recipients.length, rows: rows.length });
     } catch (e) {
       logger.error("notifications.publish_failed", { error: (e as Error).message });
     }

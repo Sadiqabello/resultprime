@@ -6,6 +6,10 @@ import { auditService } from "@/modules/audit/service";
 import { saveExtrasSchema, type SaveExtrasInput } from "./schema";
 import { reportsRepository } from "./repository";
 
+export interface TraitDef {
+  name: string;
+  category: string;
+}
 export interface ExtrasRow {
   enrollmentId: string;
   name: string;
@@ -14,13 +18,21 @@ export interface ExtrasRow {
   principalRemark: string;
   attendancePresent: number | null;
   attendanceTotal: number | null;
+  traitRatings: Record<string, number>; // trait name → 1..5
   average: number | null;
   position: number | null;
 }
 export interface ClassExtrasView {
   classLabel: string;
   termName: string | null;
+  traitDefs: TraitDef[];
   rows: ExtrasRow[];
+}
+
+interface TraitRating {
+  name: string;
+  category: string;
+  rating: number;
 }
 
 /** Form teacher of the class, or a school-wide results/admin role. */
@@ -64,6 +76,8 @@ export interface ReportCardView {
   };
   attendance: { present: number | null; total: number | null };
   remarks: { classTeacher: string | null; principal: string | null };
+  traits: TraitRating[];
+  signatureUrl: string | null;
   subjects: ReportSubject[];
 }
 
@@ -155,6 +169,8 @@ export const reportsService = {
         classTeacher: (tr?.class_teacher_remark as string | null) ?? null,
         principal: (tr?.principal_remark as string | null) ?? null,
       },
+      traits: Array.isArray(tr?.traits) ? (tr!.traits as TraitRating[]) : [],
+      signatureUrl: (settings?.principal_signature_url as string | null) ?? null,
       subjects,
     });
   },
@@ -173,7 +189,9 @@ export const reportsService = {
 
     const { data: term } = await reportsRepository.getCurrentTerm(schoolId);
     const label = classLabel(klass);
-    if (!term) return ok({ classLabel: label, termName: null, rows: [] });
+    const { data: traitRows } = await reportsRepository.listActiveTraits(schoolId);
+    const traitDefs: TraitDef[] = (traitRows ?? []).map((t) => ({ name: t.name as string, category: t.category as string }));
+    if (!term) return ok({ classLabel: label, termName: null, traitDefs, rows: [] });
     const termId = term.id as string;
 
     const [{ data: extras }, { data: enr }] = await Promise.all([
@@ -212,6 +230,9 @@ export const reportsService = {
           principalRemark: (x?.principal_remark as string | null) ?? "",
           attendancePresent: (x?.attendance_present as number | null) ?? null,
           attendanceTotal: (x?.attendance_total as number | null) ?? null,
+          traitRatings: Object.fromEntries(
+            (Array.isArray(x?.traits) ? (x!.traits as TraitRating[]) : []).map((t) => [t.name, t.rating]),
+          ),
           average: (x?.average as number | null) ?? null,
           position: (x?.class_position as number | null) ?? null,
         };
@@ -219,7 +240,7 @@ export const reportsService = {
       .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
       .map(({ sortKey: _s, ...r }) => r);
 
-    return ok({ classLabel: label, termName: term.name as string, rows });
+    return ok({ classLabel: label, termName: term.name as string, traitDefs, rows });
   },
 
   /** Persist remarks/attendance for a class's students (form teacher / principal). */
@@ -242,6 +263,10 @@ export const reportsService = {
     if (!term) return err("CONFLICT", "No active term.");
     const termId = term.id as string;
 
+    // Trait category lookup so each saved rating carries its category snapshot.
+    const { data: traitRows } = await reportsRepository.listActiveTraits(schoolId);
+    const traitCategory = new Map((traitRows ?? []).map((t) => [t.name as string, t.category as string]));
+
     // Only update enrollments that actually have a computed term_result.
     const { data: extras } = await reportsRepository.listClassExtras(schoolId, data.classId, termId);
     const valid = new Set((extras ?? []).map((x) => x.enrollment_id));
@@ -249,11 +274,15 @@ export const reportsService = {
     let saved = 0;
     for (const r of data.rows) {
       if (!valid.has(r.enrollmentId)) continue; // results not computed for this student yet
+      const traits: TraitRating[] = Object.entries(r.traitRatings ?? {})
+        .filter(([name]) => traitCategory.has(name))
+        .map(([name, rating]) => ({ name, category: traitCategory.get(name) ?? "affective", rating }));
       const { error } = await reportsRepository.updateExtras(schoolId, r.enrollmentId, termId, {
         class_teacher_remark: r.classTeacherRemark || null,
         principal_remark: r.principalRemark || null,
         attendance_present: r.attendancePresent,
         attendance_total: r.attendanceTotal,
+        traits: traits.length ? traits : null,
       });
       if (error) return err("INTERNAL", error.message);
       saved++;
