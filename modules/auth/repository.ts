@@ -49,6 +49,20 @@ export const authRepository = {
     return data.user;
   },
 
+  /**
+   * Mint a password-recovery token (the hashed OTP) for an existing user WITHOUT
+   * having Supabase send its own email. We embed the token in our own
+   * /auth/confirm link and deliver it through lib/delivery — so password setup
+   * works whether or not Supabase Auth SMTP is configured. Returns null on
+   * failure (e.g. no such user) so callers can degrade gracefully.
+   */
+  async generateRecoveryToken(email: string): Promise<string | null> {
+    const admin = createAdminClient();
+    const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
+    if (error || !data?.properties?.hashed_token) return null;
+    return data.properties.hashed_token;
+  },
+
   /** Best-effort cleanup of a just-provisioned user when a later step fails. */
   async deleteUser(userId: string) {
     const admin = createAdminClient();

@@ -44,6 +44,9 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.24.1"
   },
+  "optionalDependencies": {
+    "@sparticuz/chromium": "^131.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/qrcode": "^1.5.5",

@@ -4,6 +4,7 @@ import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
 import { authRepository } from "@/modules/auth/repository";
+import { sendAccountSetupEmail } from "@/modules/auth/service";
 import { createStudentSchema, updateStudentSchema, studentLoginSchema, type CreateStudentInput, type UpdateStudentInput, type StudentLoginInput } from "./schema";
 import { studentsRepository } from "./repository";
 
@@ -153,7 +154,7 @@ export const studentsService = {
   },
 
   /** Provision a student login (role: student) and link it to the record. */
-  async createLogin(ctx: AuthContext, input: StudentLoginInput): Promise<Result<null>> {
+  async createLogin(ctx: AuthContext, input: StudentLoginInput): Promise<Result<{ emailSent: boolean }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
     const parsed = studentLoginSchema.safeParse(input);
@@ -164,7 +165,8 @@ export const studentsService = {
       const { error } = await studentsRepository.update(ctx.schoolId, parsed.data.id, { user_id: user.id }, ctx.userId);
       if (error) return err("INTERNAL", error.message);
       await auditService.record({ schoolId: ctx.schoolId, actorId: ctx.userId, action: "student.login_created", entityType: "student", entityId: parsed.data.id });
-      return ok(null);
+      const emailSent = await sendAccountSetupEmail({ email: parsed.data.email, schoolId: ctx.schoolId, roleLabel: "student" });
+      return ok({ emailSent });
     } catch (e) {
       const dup = /already|registered|exists/i.test((e as Error).message ?? "");
       return dup ? err("CONFLICT", "An account with that email already exists.") : err("INTERNAL", "Could not create the login.");

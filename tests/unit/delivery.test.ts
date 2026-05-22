@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getEmailTransport, getWhatsAppTransport, renderNotification } from "@/lib/delivery";
+import {
+  getEmailTransport,
+  getWhatsAppTransport,
+  renderNotification,
+  renderAccountInvite,
+} from "@/lib/delivery";
 
 describe("delivery transports", () => {
   it("falls back to the log transport when no provider keys are set", async () => {
@@ -19,5 +24,14 @@ describe("delivery transports", () => {
     expect(r.subject).toContain("First");
     expect(r.text).toContain("https://app.test/portal");
     expect(r.html).toContain("<a");
+  });
+
+  it("renders an account-setup invite with the school name and link", () => {
+    const setupUrl = "https://app.test/auth/confirm?token_hash=abc&type=recovery&next=%2Fupdate-password";
+    const r = renderAccountInvite({ schoolName: "Bright Future Academy", roleLabel: "parent", setupUrl });
+    expect(r.subject).toContain("Bright Future Academy");
+    expect(r.subject).toContain("parent");
+    expect(r.text).toContain(setupUrl);
+    expect(r.html).toContain(`href="${setupUrl}"`);
   });
 });

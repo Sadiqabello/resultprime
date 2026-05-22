@@ -5,7 +5,7 @@
 > remains is mostly **configuration, deployment, and operational rigor** — plus a
 > short list of polish items and explicitly-deferred future features.
 
-_Last updated: 2026-05-21_
+_Last updated: 2026-05-22_
 
 ---
 
@@ -90,10 +90,17 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
 
 ## B. Pre-launch hardening
 
-### B1. CI/CD  *(not started — no `.github/workflows`)*
-- [ ] GitHub Actions: on PR → `typecheck` + `lint` + `test` + `build` (+ preview deploy)
-- [ ] On merge to `main` → run DB migrations, then deploy
-- [ ] Dependabot + secret scanning
+### B1. CI/CD
+- [x] **GitHub Actions** (`.github/workflows/ci.yml`): on PR/push → `typecheck` +
+      `lint` + `test` + `build`. Build/test run with dummy env so `config/env.ts`
+      validation passes (CI never reaches a real Supabase project). All four steps
+      verified green locally.
+- [x] **Dependabot** (`.github/dependabot.yml`): weekly npm (grouped) + actions.
+- [ ] On merge to `main` → run DB migrations, then deploy *(needs host + deploy
+      secrets — wire once A2/A3 are set up; add a `deploy` job gated on `main`)*
+- [ ] Enable **secret scanning** + push protection in the repo's GitHub settings
+      (UI toggle, not a file)
+- [ ] Optional: preview deploys on PR (Vercel GitHub app, once hosting is chosen)
 
 ### B2. Test suites
 - [ ] **RLS isolation tests** exist (`tests/integration/rls-isolation.test.ts`) but aren't
@@ -103,9 +110,16 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
       onboard → scores → compute → approve → publish → portal; bulk import; fee-gating.
 
 ### B3. PDF on serverless
-- [ ] Add `@sparticuz/chromium` and branch in `lib/pdf/index.ts` behind a
-      `process.env.VERCEL`/`AWS_LAMBDA_*` check. Move whole-class batch PDFs to a
-      background job + Storage signed URL if classes are large.
+- [x] **Wired.** `lib/pdf/index.ts` now branches on `process.env.VERCEL` /
+      `AWS_LAMBDA_FUNCTION_NAME` / `AWS_EXECUTION_ENV` and lazy-loads
+      `@sparticuz/chromium` (a `webpackIgnore` dynamic import + `optionalDependencies`
+      + ambient type in `types/chromium.d.ts`, so local/CI builds never need the
+      package present). `next build` verified to pass without it installed.
+      - **On deploy:** `npm ci` installs the optional dep on the serverless target.
+        Keep its version in step with `puppeteer-core`'s bundled Chrome
+        (currently pinned `^131.0.0`); bump together when you upgrade puppeteer.
+- [ ] Still TODO: move whole-class **batch** PDFs to a background job + Storage
+      signed URL for large classes (single + small batches render in-request fine).
 
 ### B4. Strict DB types
 - [ ] `types/database.types.ts` is a permissive `any` placeholder. After migrations
@@ -113,10 +127,12 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
       this will type-check every repository against the real schema and surface any
       column drift before launch.
 
-### B5. Monitoring & observability  *(not wired)*
-- [ ] **Sentry** (app + edge) for errors; **PostHog** (privacy-aware) for onboarding funnels
+### B5. Monitoring & observability  *(mostly not wired)*
+- [ ] **Sentry** (app + edge) for errors; **PostHog** (privacy-aware) for onboarding
+      funnels — needs the SDK packages + DSN/project keys (provider accounts)
 - [ ] Ship structured logs (`lib/logger`) to a platform (Logflare/Axiom/Datadog)
-- [ ] Uptime ping on `/api/health`
+- [x] Uptime ping endpoint exists: `GET /api/health` (cheap, unauthenticated,
+      whitelisted in middleware). Just point your uptime monitor at it.
 
 ### B6. Security review
 - [ ] Tighten **CSP** if you remove inline scripts/styles (currently allows `'unsafe-inline'`;
@@ -129,23 +145,36 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
 ## C. Account-provisioning polish (tied to email)
 
 ### C1. Real invite / password setup for students & parents
-Today `/students/[id]` provisions student/parent logins via a **confirmed account
-with a random temp password** (so it works without email). Once Auth SMTP is set
-(A1), switch the experience to a proper flow so families can actually sign in:
-- [ ] Send an **invite / set-password email** on login creation (or surface a
-      "send password reset" action), instead of the silent temp password
-- [ ] Optional: bulk-invite parents/students; magic-link sign-in for low digital literacy
+- [x] **Built.** Creating a student/parent login now emails a **password-setup
+      link** automatically. The flow:
+      - `authRepository.generateRecoveryToken()` mints a recovery OTP via
+        `admin.generateLink` (does **not** use Supabase's own mailer).
+      - `sendAccountSetupEmail()` (modules/auth/service) emails the link through
+        **our own transport** (`lib/delivery`) — Resend when `RESEND_API_KEY` +
+        `EMAIL_FROM` are set, else the dev **log transport** prints the link so
+        the flow is completable locally without paid keys.
+      - The link hits `GET /auth/confirm` (public route → `verifyOtp` sets the
+        session) and lands on `/update-password`, which calls
+        `supabase.auth.updateUser({ password })` and routes by role.
+      - The UI now reports "setup email sent" vs "set RESEND_API_KEY…" so admins
+        know whether a real email went out.
+      - **Note:** this path uses our transport, so it works *without* Supabase
+        Auth SMTP. Set `RESEND_API_KEY` + a verified `EMAIL_FROM` (A1) to send
+        real emails; Supabase Auth SMTP is still needed for staff *invites*.
+- [ ] Optional: bulk-invite parents/students; magic-link sign-in for low digital
+      literacy; a "resend setup link" button (the `sendAccountSetupEmail` helper
+      makes this a small add).
 
 ---
 
 ## D. Tech-debt / cleanup (low effort, no user impact)
 
-- [ ] Remove or implement the unused **`components/data-table/data-table.tsx`** stub
-      (lists are currently bespoke)
-- [ ] Remove the unused **`lib/authz` scope-check stub signatures**
-      (`isAssignedToClassSubject`, `isFormTeacherOf`) — enforcement is already inline + RLS
-- [ ] Replace the **placeholder pricing copy** on the marketing page (`app/(public)/page.tsx`)
-      with real plans (or pull from `config/plans.ts`)
+- [x] Removed the unused **`components/data-table/`** stub (lists are bespoke).
+- [x] Removed the unused **`lib/authz` `ScopeChecks` stub** — enforcement is
+      already inline + RLS.
+- [x] Marketing pricing (`app/(public)/page.tsx`) is now **derived from
+      `config/plans.ts`** (Trial + the real Standard/Pro plans), so it can't drift
+      from what billing actually charges.
 
 ---
 

@@ -75,7 +75,8 @@ export function GuardianManager({
             <Button type="submit" disabled={pending}><UserPlus className="size-4" /> {pending ? "Adding…" : "Add guardian"}</Button>
             {state && "ok" in state ? (
               <span className="flex items-center gap-1 text-sm text-brand-600">
-                <Check className="size-4" /> Added{state.loginCreated ? " with login" : ""}.
+                <Check className="size-4" /> Added
+                {state.loginCreated ? (state.emailSent ? " — setup email sent" : " with login") : ""}.
               </span>
             ) : null}
             {state && "error" in state ? <span className="text-sm text-destructive">{state.error}</span> : null}

@@ -17,6 +17,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PLANS } from "@/config/plans";
 
 export const metadata: Metadata = {
   title: "Trusted results for primary & secondary schools",
@@ -475,47 +476,47 @@ function LocalContext() {
 
 /* ── Pricing ────────────────────────────────────────────────────────────── */
 function Pricing() {
-  // NOTE: placeholder pricing — set your real plans before launch.
+  // Pricing is driven by the same config the billing/Paystack flow charges from
+  // (config/plans.ts), so the marketing page can never drift from real plans.
+  const ngn = (amount: number) => `₦${amount.toLocaleString("en-NG")}`;
+  const intervalLabel = (i: string) => (i === "annually" ? "/ year" : "/ term");
+  const standard = PLANS.find((p) => p.key === "standard");
+  const pro = PLANS.find((p) => p.key === "pro");
+
   const tiers = [
     {
-      name: "Starter",
+      name: "Trial",
       price: "Free",
-      unit: "",
-      desc: "For a single class set or a school finding its feet.",
-      features: ["Up to 60 students", "1 grading system", "Report cards & broadsheets", "Email support"],
+      unit: "14 days",
+      desc: "Set up your school, import a class, and print a sample report card — no card required.",
+      features: ["Full feature access", "Report cards & broadsheets", "Bulk Excel import", "Email support"],
       cta: "Start free",
       featured: false,
     },
     {
-      name: "School",
-      price: "₦150",
-      unit: "/ student · term",
+      name: standard?.name ?? "Standard",
+      price: standard ? ngn(standard.amount) : "Contact us",
+      unit: standard ? intervalLabel(standard.interval) : "",
       desc: "Everything a school needs to run results end to end.",
-      features: [
-        "Unlimited students & classes",
-        "Approval workflow & audit trail",
-        "Bulk Excel import",
-        "QR-verified report cards",
-        "Branding & priority support",
-      ],
+      features: standard?.features ?? [],
       cta: "Create your school",
       featured: true,
     },
     {
-      name: "Group",
-      price: "Custom",
-      unit: "",
-      desc: "For proprietors and consultants running many schools.",
-      features: ["Multiple schools, one console", "White-label & subdomains", "Onboarding & training", "Dedicated support"],
-      cta: "Talk to us",
+      name: pro?.name ?? "Pro",
+      price: pro ? ngn(pro.amount) : "Contact us",
+      unit: pro ? intervalLabel(pro.interval) : "",
+      desc: "For larger schools that need branding and priority support.",
+      features: pro?.features ?? [],
+      cta: "Choose Pro",
       featured: false,
     },
   ];
   return (
     <section id="pricing" className="scroll-mt-20 border-t border-border bg-secondary/40">
       <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
-        <SectionHeading eyebrow="Pricing" title="Simple, per-term pricing">
-          Start free and upgrade when results season arrives. No long contracts.
+        <SectionHeading eyebrow="Pricing" title="Simple, annual pricing">
+          Start free and pick a plan when you&apos;re ready. No long contracts, billed once a year.
         </SectionHeading>
 
         <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">

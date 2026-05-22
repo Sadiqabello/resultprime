@@ -6,7 +6,7 @@ import { friendlyMessage } from "@/lib/errors";
 import { guardiansService } from "./service";
 import { addGuardianSchema } from "./schema";
 
-export type GuardianFormState = { ok: true; loginCreated: boolean } | { error: string } | null;
+export type GuardianFormState = { ok: true; loginCreated: boolean; emailSent: boolean } | { error: string } | null;
 
 export async function addGuardian(_prev: GuardianFormState, formData: FormData): Promise<GuardianFormState> {
   const ctx = await requireAuth();
@@ -24,5 +24,5 @@ export async function addGuardian(_prev: GuardianFormState, formData: FormData):
   const res = await guardiansService.add(ctx, parsed.data);
   if (!res.ok) return { error: friendlyMessage(res.error) };
   revalidatePath(`/students/${parsed.data.studentId}`);
-  return { ok: true, loginCreated: res.data.loginCreated };
+  return { ok: true, loginCreated: res.data.loginCreated, emailSent: res.data.emailSent };
 }

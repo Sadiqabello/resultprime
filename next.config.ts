@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Heavy/native server deps for PDF rendering — keep them out of the bundle so
+  // Next loads them at runtime (and so the optional @sparticuz/chromium isn't
+  // required at build time on non-serverless targets). See lib/pdf/index.ts.
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
   // Security headers applied to every route. CSP is intentionally conservative;
   // tighten/loosen as you add third-party scripts (analytics, payment widgets).
   async headers() {

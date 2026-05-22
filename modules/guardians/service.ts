@@ -4,6 +4,7 @@ import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
 import { authRepository } from "@/modules/auth/repository";
+import { sendAccountSetupEmail } from "@/modules/auth/service";
 import { addGuardianSchema, type AddGuardianInput } from "./schema";
 import { guardiansRepository } from "./repository";
 
@@ -40,7 +41,7 @@ export const guardiansService = {
   },
 
   /** Create a guardian, link to the student, optionally provision a parent login. */
-  async add(ctx: AuthContext, input: AddGuardianInput): Promise<Result<{ loginCreated: boolean }>> {
+  async add(ctx: AuthContext, input: AddGuardianInput): Promise<Result<{ loginCreated: boolean; emailSent: boolean }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
     const schoolId = ctx.schoolId;
@@ -61,12 +62,14 @@ export const guardiansService = {
     if (linkErr) return err("INTERNAL", linkErr.message);
 
     let loginCreated = false;
+    let emailSent = false;
     if (d.createLogin && d.email) {
       try {
         const user = await authRepository.createLogin(d.email, schoolId, ["parent"]);
         if (user) {
           await guardiansRepository.setUserId(schoolId, guardianId, user.id);
           loginCreated = true;
+          emailSent = await sendAccountSetupEmail({ email: d.email, schoolId, roleLabel: "parent" });
         }
       } catch (e) {
         // Guardian + link are saved; surface that the login wasn't created.
@@ -75,6 +78,6 @@ export const guardiansService = {
     }
 
     await auditService.record({ schoolId, actorId: ctx.userId, action: "guardian.add", entityType: "student", entityId: d.studentId, metadata: { guardianId, loginCreated } });
-    return ok({ loginCreated });
+    return ok({ loginCreated, emailSent });
   },
 };

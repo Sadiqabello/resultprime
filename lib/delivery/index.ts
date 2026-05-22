@@ -95,6 +95,29 @@ export function getWhatsAppTransport(): Transport<WhatsAppMessage> {
   return sid && token && from ? twilioWhatsApp(sid, token, from) : logTransport<WhatsAppMessage>("whatsapp");
 }
 
+/**
+ * Render a password-setup invite for a freshly provisioned student/parent/staff
+ * login. The link points at /auth/confirm, which verifies the recovery token and
+ * lands the family on /update-password to choose a password.
+ */
+export function renderAccountInvite(opts: {
+  schoolName: string;
+  roleLabel: string;
+  setupUrl: string;
+}): { subject: string; text: string; html: string } {
+  const { schoolName, roleLabel, setupUrl } = opts;
+  const subject = `Set up your ${schoolName} ${roleLabel} account`;
+  const text =
+    `An account has been created for you at ${schoolName}.\n\n` +
+    `Set your password to sign in: ${setupUrl}\n\n` +
+    `This link expires in 24 hours. If you didn't expect this, you can ignore this email.`;
+  const html =
+    `<p>An account has been created for you at <strong>${schoolName}</strong>.</p>` +
+    `<p><a href="${setupUrl}">Set your password</a> to sign in to the results portal.</p>` +
+    `<p style="color:#64748b;font-size:13px">This link expires in 24 hours. If you didn't expect this, you can ignore this email.</p>`;
+  return { subject, text, html };
+}
+
 /** Render a stored notification into channel-ready content. */
 export function renderNotification(
   type: string,

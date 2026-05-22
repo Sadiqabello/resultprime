@@ -111,7 +111,7 @@ export function StudentManager({ detail, classes, canManage }: Props) {
                 <Button type="submit" variant="outline" disabled={loggingIn}>
                   <UserPlus className="size-4" /> {loggingIn ? "Creating…" : "Create login"}
                 </Button>
-                {loginState && "ok" in loginState ? <span className="text-sm text-brand-600">Login created.</span> : null}
+                {loginState && "ok" in loginState ? <span className="text-sm text-brand-600">{loginState.message ?? "Login created."}</span> : null}
                 {loginState && "error" in loginState ? <span className="text-sm text-destructive">{loginState.error}</span> : null}
               </form>
             )}

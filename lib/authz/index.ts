@@ -40,17 +40,3 @@ export function isSuperAdmin(ctx: AuthContext): boolean {
 export function assertSameTenant(ctx: AuthContext, resourceSchoolId: string): boolean {
   return isSuperAdmin(ctx) || ctx.schoolId === resourceSchoolId;
 }
-
-/**
- * Scope checks below answer "can this role act on THIS target?" — capability
- * (`can`) is necessary but not sufficient for mutations. These are stubs that
- * must query assignments (class_subjects / classes) via a repository. Wire them
- * up in the relevant module services.
- *
- * TODO(scores): isAssignedToClassSubject(ctx, classSubjectId, termId)
- * TODO(form-teacher): isFormTeacherOf(ctx, classId)
- */
-export interface ScopeChecks {
-  isAssignedToClassSubject(classSubjectId: string, termId: string): Promise<boolean>;
-  isFormTeacherOf(classId: string): Promise<boolean>;
-}

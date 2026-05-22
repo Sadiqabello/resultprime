@@ -4,8 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { getEmailTransport, renderAccountInvite } from "@/lib/delivery";
 import type { AuthContext } from "@/lib/authz";
 import type { Role } from "@/lib/authz";
+import { authRepository } from "./repository";
 import type { RegisterSchoolInput } from "./schema";
 
 /**
@@ -113,4 +115,54 @@ export async function registerSchoolAndAdmin(
 
   logger.info("auth.register.success", { schoolId, userId: created.user.id });
   return ok({ schoolId });
+}
+
+/**
+ * Best-effort: email a password-setup link to a freshly provisioned login
+ * (student / parent / staff). Uses our own email transport — Resend when its
+ * keys are set, otherwise the dev log transport (which records the link so you
+ * can complete the flow locally without paid keys). Never throws; returns
+ * `true` only when a LIVE provider actually dispatched the email, so callers can
+ * tell families "check your inbox" vs "ask your school for the link".
+ */
+export async function sendAccountSetupEmail(input: {
+  email: string;
+  schoolId: string;
+  roleLabel: string;
+}): Promise<boolean> {
+  try {
+    const token = await authRepository.generateRecoveryToken(input.email);
+    if (!token) return false;
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const setupUrl =
+      `${appUrl}/auth/confirm?token_hash=${encodeURIComponent(token)}` +
+      `&type=recovery&next=${encodeURIComponent("/update-password")}`;
+
+    // Friendlier email: include the school's name (admin client — no user ctx here).
+    const admin = createAdminClient();
+    const { data: school } = await admin
+      .from("schools")
+      .select("name")
+      .eq("id", input.schoolId)
+      .maybeSingle();
+    const schoolName = (school?.name as string | undefined) ?? "your school";
+
+    const transport = getEmailTransport();
+    const { subject, text, html } = renderAccountInvite({
+      schoolName,
+      roleLabel: input.roleLabel,
+      setupUrl,
+    });
+    const res = await transport.send({ to: input.email, subject, text, html });
+    if (!res.ok) {
+      logger.warn("auth.setup_email_failed", { schoolId: input.schoolId, error: res.error });
+      return false;
+    }
+    // The log transport "succeeds" without delivering — only report a real send.
+    return transport.name !== "log";
+  } catch (e) {
+    logger.warn("auth.setup_email_error", { schoolId: input.schoolId, error: (e as Error).message });
+    return false;
+  }
 }

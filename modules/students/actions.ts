@@ -8,7 +8,7 @@ import { uploadImage } from "@/lib/storage";
 import { studentsService } from "./service";
 import { createStudentSchema, updateStudentSchema } from "./schema";
 
-export type StudentFormState = { ok: true } | { error: string } | null;
+export type StudentFormState = { ok: true; message?: string } | { error: string } | null;
 export type UploadResult = { ok: true; url: string } | { ok: false; error: string };
 
 export async function createStudent(
@@ -57,7 +57,12 @@ export async function createStudentLogin(_prev: StudentFormState, formData: Form
   const res = await studentsService.createLogin(ctx, { id, email: formData.get("email") as string });
   if (!res.ok) return { error: friendlyMessage(res.error) };
   revalidatePath(`/students/${id}`);
-  return { ok: true };
+  return {
+    ok: true,
+    message: res.data.emailSent
+      ? "Login created — a password-setup email has been sent."
+      : "Login created. Set RESEND_API_KEY to email a setup link automatically.",
+  };
 }
 
 export async function uploadStudentPhoto(formData: FormData): Promise<UploadResult> {
