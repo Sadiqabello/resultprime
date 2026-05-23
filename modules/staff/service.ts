@@ -3,6 +3,7 @@ import { can, type AuthContext, type Role } from "@/lib/authz";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { authRepository } from "@/modules/auth/repository";
+import { sendAccountSetupEmail } from "@/modules/auth/service";
 import { addStaffSchema, updateStaffSchema, ROLE_LABELS, type AddStaffInput, type UpdateStaffInput } from "./schema";
 import { staffRepository } from "./repository";
 
@@ -70,19 +71,21 @@ export const staffService = {
     const data = parsed.data;
     const schoolId = ctx.schoolId;
 
+    // Provision a confirmed login with claims (same path as students/parents) so
+    // the branded password-setup email + /auth/confirm → /update-password flow
+    // works identically and doesn't depend on Supabase Auth SMTP.
     let userId: string | null = null;
     if (data.email) {
       try {
-        const user = await authRepository.inviteByEmail(data.email, schoolId, [data.role as Role]);
+        const user = await authRepository.createLogin(data.email, schoolId, [data.role as Role]);
         userId = user?.id ?? null;
-        if (userId) await authRepository.setClaims(userId, schoolId, [data.role as Role]);
       } catch (e) {
         const msg = (e as Error).message ?? "";
         const dup = /already|registered|exists/i.test(msg);
         logger.warn("staff.invite_failed", { schoolId, error: msg });
         return dup
           ? err("CONFLICT", "A user with that email already exists.")
-          : err("INTERNAL", "Could not send the invite. Check email settings.");
+          : err("INTERNAL", "Could not create the staff login.");
       }
     }
 
@@ -96,10 +99,25 @@ export const staffService = {
     if (userId) {
       const roleId = await staffRepository.getRoleIdByKey(data.role);
       if (roleId) await staffRepository.insertUserRole(userId, roleId, schoolId);
+      // Best-effort: email the password-setup link (never blocks staff creation).
+      await sendAccountSetupEmail({ email: data.email!, schoolId, roleLabel: ROLE_LABELS[data.role] ?? "staff" });
     }
 
     logger.info("staff.added", { schoolId, userId, invited: Boolean(data.email) });
     return ok(null);
+  },
+
+  /** Re-send the password-setup email to a staff member who already has a login. */
+  async resendSetupLink(ctx: AuthContext, id: string): Promise<Result<{ emailSent: boolean }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "staff.write")) return err("FORBIDDEN", "Not allowed.");
+    const { data: s } = await staffRepository.get(ctx.schoolId, id);
+    if (!s) return err("NOT_FOUND", "Staff not found.");
+    if (!s.user_id) return err("VALIDATION", "This staff member has no login — add one with an email first.");
+    const email = await authRepository.getUserEmail(s.user_id as string);
+    if (!email) return err("INTERNAL", "Couldn't find the login email.");
+    const emailSent = await sendAccountSetupEmail({ email, schoolId: ctx.schoolId, roleLabel: "staff" });
+    return ok({ emailSent });
   },
 
   async get(ctx: AuthContext, id: string): Promise<Result<{ id: string; fullName: string; staffNo: string; phone: string | null; qualification: string | null; isTeaching: boolean }>> {

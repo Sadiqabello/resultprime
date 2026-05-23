@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
+
 import { saveClassAssignment } from "../actions";
 import type { AssignmentSubject, TeacherOption } from "../service";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function AssignmentEditor({
   const [rows, setRows] = useState(subjects.map((s) => ({ ...s })));
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
+  useActionToast(status, "Assignments saved");
 
   const set = (subjectId: string, patch: Partial<AssignmentSubject>) =>
     setRows((rs) => rs.map((r) => (r.subjectId === subjectId ? { ...r, ...patch } : r)));
@@ -103,11 +105,6 @@ export function AssignmentEditor({
           {pending ? "Saving…" : "Save assignment"}
         </Button>
         <span className="text-sm text-muted-foreground">{offeredCount} subject(s) offered</span>
-        {status && "ok" in status ? (
-          <span className="flex items-center gap-1.5 text-sm text-brand-600">
-            <Check className="size-4" /> Saved
-          </span>
-        ) : null}
         {status && "error" in status ? (
           <span className="text-sm text-destructive">{status.error}</span>
         ) : null}

@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { staffService } from "@/modules/staff/service";
 import Link from "next/link";
-import { deleteStaff } from "@/modules/staff/actions";
+import { deleteStaff, resendStaffSetup } from "@/modules/staff/actions";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
+import { ResendSetupButton } from "@/components/ui/resend-setup-button";
 import { AddStaffForm } from "@/modules/staff/components/add-staff-form";
 import { can } from "@/lib/authz";
 import { Badge } from "@/components/ui/badge";
@@ -104,10 +106,19 @@ export default async function StaffPage() {
                     <TableCell className="text-right">
                       <span className="flex items-center justify-end gap-3">
                         <Link href={`/staff/${s.id}`} className="text-sm font-medium text-primary hover:underline">Edit</Link>
-                        <form action={deleteStaff}>
-                          <input type="hidden" name="id" value={s.id} />
-                          <button type="submit" className="text-sm font-medium text-destructive hover:underline">Remove</button>
-                        </form>
+                        {s.hasLogin ? <ResendSetupButton action={resendStaffSetup} id={s.id} label="Resend" /> : null}
+                        <ConfirmSubmit
+                          action={deleteStaff}
+                          fields={{ id: s.id }}
+                          title="Remove this staff member?"
+                          description={<>This removes <strong>{s.fullName}</strong>&apos;s access and unassigns them from classes and subjects. You can re-invite them later.</>}
+                          confirmLabel="Remove staff"
+                          successMessage="Staff removed"
+                          triggerClassName="text-sm font-medium text-destructive hover:underline"
+                          triggerAriaLabel={`Remove ${s.fullName}`}
+                        >
+                          Remove
+                        </ConfirmSubmit>
                       </span>
                     </TableCell>
                   ) : null}

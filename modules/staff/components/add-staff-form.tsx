@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { addStaff, type StaffFormState } from "../actions";
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from "../schema";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ const SELECT =
 
 export function AddStaffForm() {
   const [state, action, pending] = useActionState<StaffFormState, FormData>(addStaff, null);
+  useActionToast(state, "Staff added");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function AddStaffForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s-phone">Phone</Label>
-          <Input id="s-phone" name="phone" placeholder="080…" />
+          <Input id="s-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="080…" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s-qual">Qualification</Label>
@@ -69,9 +71,6 @@ export function AddStaffForm() {
         <p role="alert" className="text-sm text-destructive">
           {state.error}
         </p>
-      ) : null}
-      {state && "ok" in state && state.ok ? (
-        <p className="text-sm text-brand-600">Staff added{`. `}If you set an email, an invite is on its way.</p>
       ) : null}
     </form>
   );

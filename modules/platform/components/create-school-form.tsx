@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { createSchool, type PlatformFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 
 export function CreateSchoolForm() {
   const [state, action, pending] = useActionState<PlatformFormState, FormData>(createSchool, null);
+  useActionToast(state, "School created");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -42,9 +44,6 @@ export function CreateSchoolForm() {
           <p role="alert" className="text-sm text-destructive">
             {state.error}
           </p>
-        ) : null}
-        {state && "ok" in state && state.ok ? (
-          <p className="text-sm text-brand-600">{state.message}</p>
         ) : null}
       </div>
     </form>

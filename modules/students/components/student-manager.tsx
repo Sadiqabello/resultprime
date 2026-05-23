@@ -2,7 +2,9 @@
 
 import { useActionState, useRef, useState, useTransition } from "react";
 import { Check, Upload, UserPlus } from "lucide-react";
-import { updateStudent, createStudentLogin, uploadStudentPhoto, type StudentFormState } from "../actions";
+import { updateStudent, createStudentLogin, uploadStudentPhoto, resendStudentSetup, type StudentFormState } from "../actions";
+import { ResendSetupButton } from "@/components/ui/resend-setup-button";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import type { StudentDetail } from "../service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,8 @@ interface Props {
 export function StudentManager({ detail, classes, canManage }: Props) {
   const [editState, editAction, editing] = useActionState<StudentFormState, FormData>(updateStudent, null);
   const [loginState, loginAction, loggingIn] = useActionState<StudentFormState, FormData>(createStudentLogin, null);
+  useActionToast(editState, "Changes saved");
+  useActionToast(loginState, "Login created");
   const [photo, setPhoto] = useState<string | null>(detail.photoUrl);
   const [photoErr, setPhotoErr] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
@@ -91,7 +95,6 @@ export function StudentManager({ detail, classes, canManage }: Props) {
             </div>
             <div className="flex items-center gap-3">
               <Button type="submit" disabled={editing}>{editing ? "Saving…" : "Save changes"}</Button>
-              {editState && "ok" in editState ? <span className="flex items-center gap-1 text-sm text-brand-600"><Check className="size-4" /> Saved</span> : null}
               {editState && "error" in editState ? <span className="text-sm text-destructive">{editState.error}</span> : null}
             </div>
           </form>
@@ -100,7 +103,10 @@ export function StudentManager({ detail, classes, canManage }: Props) {
           <div className="rounded-lg border p-4">
             <p className="text-sm font-medium">Student login</p>
             {detail.hasLogin ? (
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-brand-700"><Check className="size-4" /> This student has a portal login.</p>
+              <div className="mt-1 space-y-2">
+                <p className="flex items-center gap-1.5 text-sm text-brand-700"><Check className="size-4" /> This student has a portal login.</p>
+                <ResendSetupButton action={resendStudentSetup} id={detail.id} />
+              </div>
             ) : (
               <form action={loginAction} className="mt-2 flex flex-wrap items-end gap-3">
                 <input type="hidden" name="id" value={detail.id} />
@@ -111,7 +117,6 @@ export function StudentManager({ detail, classes, canManage }: Props) {
                 <Button type="submit" variant="outline" disabled={loggingIn}>
                   <UserPlus className="size-4" /> {loggingIn ? "Creating…" : "Create login"}
                 </Button>
-                {loginState && "ok" in loginState ? <span className="text-sm text-brand-600">{loginState.message ?? "Login created."}</span> : null}
                 {loginState && "error" in loginState ? <span className="text-sm text-destructive">{loginState.error}</span> : null}
               </form>
             )}

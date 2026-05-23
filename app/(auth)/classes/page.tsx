@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { academicsService } from "@/modules/academics/service";
 import { deleteClass } from "@/modules/academics/actions";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { CreateClassForm } from "@/modules/academics/components/create-class-form";
 import { can } from "@/lib/authz";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,15 +91,18 @@ export default async function ClassesPage() {
                       >
                         Subjects
                       </Link>
-                      <form action={deleteClass}>
-                        <input type="hidden" name="id" value={c.id} />
-                        <button
-                          type="submit"
-                          className="text-sm font-medium text-destructive hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </form>
+                      <ConfirmSubmit
+                        action={deleteClass}
+                        fields={{ id: c.id }}
+                        title="Delete this class?"
+                        description={<>This deletes <strong>{c.name}{c.arm ? ` ${c.arm}` : ""}</strong>. You can&apos;t delete a class that still has enrolled students or results — move them first.</>}
+                        confirmLabel="Delete class"
+                        successMessage="Class deleted"
+                        triggerClassName="text-sm font-medium text-destructive hover:underline"
+                        triggerAriaLabel={`Delete ${c.name}`}
+                      >
+                        Delete
+                      </ConfirmSubmit>
                     </div>
                   </TableCell>
                 </TableRow>

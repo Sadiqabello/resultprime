@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Lock } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
+import { Lock } from "lucide-react";
 import { saveScores } from "../actions";
 import type { SheetView } from "../service";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function ScoreGrid({ sheet }: { sheet: SheetView }) {
   });
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
+  useActionToast(status, "Scores saved");
 
   const maxById = useMemo(
     () => new Map(sheet.components.map((c) => [c.id, c.maxScore])),
@@ -142,11 +144,6 @@ export function ScoreGrid({ sheet }: { sheet: SheetView }) {
           </Button>
           {anyInvalid ? (
             <span className="text-sm text-destructive">Some scores exceed their maximum.</span>
-          ) : null}
-          {status && "ok" in status ? (
-            <span className="flex items-center gap-1.5 text-sm text-brand-600">
-              <Check className="size-4" /> Saved
-            </span>
           ) : null}
           {status && "error" in status ? (
             <span className="text-sm text-destructive">{status.error}</span>

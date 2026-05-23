@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { createClass, type AcademicsFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ const LEVELS = [
 
 export function CreateClassForm() {
   const [state, action, pending] = useActionState<AcademicsFormState, FormData>(createClass, null);
+  useActionToast(state, "Class created");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {

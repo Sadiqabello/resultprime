@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Upload } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
+import { Upload } from "lucide-react";
 import { updateSchoolSettings, uploadBrandingAsset } from "../actions";
 import type { BrandingView } from "../service";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
   const [pending, start] = useTransition();
   const [uploading, startUpload] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
+  useActionToast(status, "Branding saved");
   const set = <K extends keyof BrandingView>(k: K, val: BrandingView[K]) => {
     setV((s) => ({ ...s, [k]: val }));
     setStatus(null);
@@ -145,11 +147,6 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
         <Button onClick={save} disabled={pending}>
           {pending ? "Saving…" : "Save branding"}
         </Button>
-        {status && "ok" in status ? (
-          <span className="flex items-center gap-1.5 text-sm text-brand-600">
-            <Check className="size-4" /> Saved
-          </span>
-        ) : null}
         {status && "error" in status ? <span className="text-sm text-destructive">{status.error}</span> : null}
       </div>
     </div>

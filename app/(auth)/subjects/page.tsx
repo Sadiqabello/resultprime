@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { academicsService } from "@/modules/academics/service";
 import { deleteSubject } from "@/modules/academics/actions";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { CreateSubjectForm } from "@/modules/academics/components/create-subject-form";
 import { can } from "@/lib/authz";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,15 +79,18 @@ export default async function SubjectsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <form action={deleteSubject}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <button
-                        type="submit"
-                        className="text-sm font-medium text-destructive hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </form>
+                    <ConfirmSubmit
+                      action={deleteSubject}
+                      fields={{ id: s.id }}
+                      title="Delete this subject?"
+                      description={<>This deletes <strong>{s.name}</strong> ({s.code}). Subjects that are already taught in a class with results can&apos;t be deleted.</>}
+                      confirmLabel="Delete subject"
+                      successMessage="Subject deleted"
+                      triggerClassName="text-sm font-medium text-destructive hover:underline"
+                      triggerAriaLabel={`Delete ${s.name}`}
+                    >
+                      Delete
+                    </ConfirmSubmit>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Plus, X } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
+import { Plus, X } from "lucide-react";
 import { saveTraits } from "../actions";
 import { TRAIT_CATEGORIES, type TraitCategory } from "../schema";
 import type { TraitItem } from "../service";
@@ -12,6 +13,7 @@ export function TraitEditor({ initial }: { initial: { configured: boolean; trait
   const [rows, setRows] = useState<TraitItem[]>(initial.traits);
   const [pending, start] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
+  useActionToast(status, "Saved");
 
   const set = (i: number, p: Partial<TraitItem>) => { setRows((r) => r.map((x, idx) => (idx === i ? { ...x, ...p } : x))); setStatus(null); };
   const add = () => { setRows((r) => [...r, { name: "", category: "affective" }]); setStatus(null); };
@@ -44,7 +46,6 @@ export function TraitEditor({ initial }: { initial: { configured: boolean; trait
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="outline" size="sm" onClick={add}><Plus className="size-4" /> Add trait</Button>
         <Button type="button" size="sm" onClick={save} disabled={pending}>{pending ? "Saving…" : "Save traits"}</Button>
-        {status && "ok" in status ? <span className="flex items-center gap-1 text-sm text-brand-600"><Check className="size-4" /> Saved</span> : null}
         {status && "error" in status ? <span className="text-sm text-destructive">{status.error}</span> : null}
       </div>
     </div>

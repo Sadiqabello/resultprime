@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 // Editorial serif for display + crisp grotesque for body (see frontend design notes).
@@ -32,6 +33,7 @@ export default function RootLayout({
           attributes onto <body> before React hydrates, causing a benign mismatch. */}
       <body suppressHydrationWarning className="min-h-screen bg-background font-sans antialiased">
         {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { createStudent, type StudentFormState } from "../actions";
 import type { ClassOption } from "../service";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ const SELECT =
 
 export function AddStudentForm({ classes }: { classes: ClassOption[] }) {
   const [state, action, pending] = useActionState<StudentFormState, FormData>(createStudent, null);
+  useActionToast(state, "Student added");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -72,9 +74,6 @@ export function AddStudentForm({ classes }: { classes: ClassOption[] }) {
           <p role="alert" className="text-sm text-destructive">
             {state.error}
           </p>
-        ) : null}
-        {state && "ok" in state && state.ok ? (
-          <p className="text-sm text-brand-600">Student enrolled in the current term.</p>
         ) : null}
       </div>
     </form>

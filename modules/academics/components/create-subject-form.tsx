@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { createSubject, type AcademicsFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ const SELECT_CLASS =
 
 export function CreateSubjectForm() {
   const [state, action, pending] = useActionState<AcademicsFormState, FormData>(createSubject, null);
+  useActionToast(state, "Subject added");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {

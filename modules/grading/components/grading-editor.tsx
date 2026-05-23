@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { Plus, Trash2, Check, AlertTriangle } from "lucide-react";
 import { validateGradeBands } from "@/lib/result-engine";
 import { saveGrading } from "../actions";
@@ -41,6 +42,7 @@ export function GradingEditor({ initial }: { initial: GradingConfigView }) {
   );
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok: true } | { error: string } | null>(null);
+  useActionToast(status, "Grading saved");
 
   const bandCheck = useMemo(
     () =>
@@ -256,11 +258,6 @@ export function GradingEditor({ initial }: { initial: GradingConfigView }) {
         <Button onClick={save} disabled={pending || !bandCheck.valid || !hasExam}>
           {pending ? "Saving…" : "Save grading system"}
         </Button>
-        {status && "ok" in status ? (
-          <span className="flex items-center gap-1.5 text-sm text-brand-600">
-            <Check className="size-4" /> Saved
-          </span>
-        ) : null}
         {status && "error" in status ? (
           <span className="text-sm text-destructive">{status.error}</span>
         ) : null}

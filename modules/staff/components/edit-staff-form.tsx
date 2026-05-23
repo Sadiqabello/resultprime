@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Check } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { updateStaff, type StaffFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ interface Staff {
 
 export function EditStaffForm({ staff }: { staff: Staff }) {
   const [state, action, pending] = useActionState<StaffFormState, FormData>(updateStaff, null);
+  useActionToast(state, "Changes saved");
 
   return (
     <form action={action} className="space-y-4">
@@ -33,7 +34,7 @@ export function EditStaffForm({ staff }: { staff: Staff }) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" defaultValue={staff.phone ?? ""} placeholder="080…" />
+          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={staff.phone ?? ""} placeholder="080…" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="qualification">Qualification</Label>
@@ -45,7 +46,6 @@ export function EditStaffForm({ staff }: { staff: Staff }) {
       </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save changes"}</Button>
-        {state && "ok" in state ? <span className="flex items-center gap-1 text-sm text-brand-600"><Check className="size-4" /> Saved</span> : null}
         {state && "error" in state ? <span className="text-sm text-destructive">{state.error}</span> : null}
       </div>
     </form>

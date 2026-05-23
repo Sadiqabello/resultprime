@@ -5,7 +5,8 @@ import { platformService } from "@/modules/platform/service";
 import { setSchoolStatus } from "@/modules/platform/actions";
 import { CreateSchoolForm } from "@/modules/platform/components/create-school-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import {
   Table,
   TableBody,
@@ -83,13 +84,25 @@ export default async function SchoolsPage() {
                     {new Date(s.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <form action={setSchoolStatus} className="inline">
-                      <input type="hidden" name="id" value={s.id} />
-                      <input type="hidden" name="status" value={s.status === "suspended" ? "active" : "suspended"} />
-                      <Button type="submit" size="sm" variant="outline">
-                        {s.status === "suspended" ? "Reactivate" : "Suspend"}
-                      </Button>
-                    </form>
+                    <ConfirmSubmit
+                      action={setSchoolStatus}
+                      fields={{ id: s.id, status: s.status === "suspended" ? "active" : "suspended" }}
+                      title={s.status === "suspended" ? "Reactivate this school?" : "Suspend this school?"}
+                      description={
+                        s.status === "suspended" ? (
+                          <>This restores sign-in access for <strong>{s.name}</strong>.</>
+                        ) : (
+                          <>This blocks <strong>{s.name}</strong>&apos;s staff, students and parents from signing in until you reactivate it.</>
+                        )
+                      }
+                      confirmLabel={s.status === "suspended" ? "Reactivate" : "Suspend school"}
+                      successMessage={s.status === "suspended" ? "School reactivated" : "School suspended"}
+                      destructive={s.status !== "suspended"}
+                      triggerClassName={buttonVariants({ variant: "outline", size: "sm" })}
+                      triggerAriaLabel={`${s.status === "suspended" ? "Reactivate" : "Suspend"} ${s.name}`}
+                    >
+                      {s.status === "suspended" ? "Reactivate" : "Suspend"}
+                    </ConfirmSubmit>
                   </TableCell>
                 </TableRow>
               ))}

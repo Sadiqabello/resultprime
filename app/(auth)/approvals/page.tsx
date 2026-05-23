@@ -7,7 +7,8 @@ import { submitClass, approveClass, publishClass, returnClass } from "@/modules/
 import { can } from "@/lib/authz";
 import type { ApprovalState } from "@/config/constants";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -34,12 +35,32 @@ function ActionButton({
   classId,
   label,
   variant = "default",
+  confirm,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   classId: string;
   label: string;
   variant?: "default" | "outline";
+  /** When set, the action runs only after an "are you sure?" confirmation. */
+  confirm?: { title: string; description: React.ReactNode; confirmLabel: string; destructive?: boolean; successMessage?: string };
 }) {
+  if (confirm) {
+    return (
+      <ConfirmSubmit
+        action={action}
+        fields={{ classId }}
+        title={confirm.title}
+        description={confirm.description}
+        confirmLabel={confirm.confirmLabel}
+        destructive={confirm.destructive ?? false}
+        successMessage={confirm.successMessage}
+        triggerClassName={buttonVariants({ variant, size: "sm" })}
+        triggerAriaLabel={label}
+      >
+        {label}
+      </ConfirmSubmit>
+    );
+  }
   return (
     <form action={action}>
       <input type="hidden" name="classId" value={classId} />
@@ -133,15 +154,51 @@ export default async function ApprovalsPage() {
                         {(c.state === "submitted" || c.state === "l1_approved") && canApprove ? (
                           <>
                             <ActionButton action={approveClass} classId={c.classId} label="Approve" />
-                            <ActionButton action={returnClass} classId={c.classId} label="Return" variant="outline" />
+                            <ActionButton
+                              action={returnClass}
+                              classId={c.classId}
+                              label="Return"
+                              variant="outline"
+                              confirm={{
+                                title: "Return for edits?",
+                                description: <>This sends <strong>{c.label}</strong> back to the teacher. Scores unlock for editing, and it must be re-submitted and re-approved before publishing.</>,
+                                confirmLabel: "Return",
+                                destructive: true,
+                                successMessage: "Returned for edits",
+                              }}
+                            />
                           </>
                         ) : null}
 
                         {c.state === "approved" ? (
                           <>
-                            {canPublish ? <ActionButton action={publishClass} classId={c.classId} label="Publish" /> : null}
+                            {canPublish ? (
+                              <ActionButton
+                                action={publishClass}
+                                classId={c.classId}
+                                label="Publish"
+                                confirm={{
+                                  title: "Publish results?",
+                                  description: <>This releases <strong>{c.label}</strong>&apos;s results to parents and students and locks them. Parents are notified, and report cards become QR-verifiable. Re-opening afterwards is recorded.</>,
+                                  confirmLabel: "Publish results",
+                                  successMessage: "Results published",
+                                }}
+                              />
+                            ) : null}
                             {canApprove ? (
-                              <ActionButton action={returnClass} classId={c.classId} label="Return" variant="outline" />
+                              <ActionButton
+                                action={returnClass}
+                                classId={c.classId}
+                                label="Return"
+                                variant="outline"
+                                confirm={{
+                                  title: "Return for edits?",
+                                  description: <>This reverses the approval of <strong>{c.label}</strong> and reopens scores for editing. It must be re-approved before it can be published.</>,
+                                  confirmLabel: "Return",
+                                  destructive: true,
+                                  successMessage: "Returned for edits",
+                                }}
+                              />
                             ) : null}
                           </>
                         ) : null}

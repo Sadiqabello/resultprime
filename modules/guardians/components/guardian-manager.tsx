@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { Check, UserPlus } from "lucide-react";
-import { addGuardian, type GuardianFormState } from "../actions";
+import { addGuardian, resendGuardianSetup, type GuardianFormState } from "../actions";
+import { ResendSetupButton } from "@/components/ui/resend-setup-button";
 import type { GuardianView } from "../service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,7 @@ export function GuardianManager({
   canManage: boolean;
 }) {
   const [state, action, pending] = useActionState<GuardianFormState, FormData>(addGuardian, null);
+  useActionToast(state, "Guardian added");
 
   return (
     <div className="space-y-4">
@@ -36,7 +39,15 @@ export function GuardianManager({
                 {g.email ? <span className="block text-xs text-muted-foreground">{g.email}</span> : null}
               </span>
               {g.hasLogin ? (
-                <span className="flex items-center gap-1 text-xs text-brand-700"><Check className="size-3.5" /> has login</span>
+                <span className="flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-brand-700"><Check className="size-3.5" /> has login</span>
+                  <ResendSetupButton
+                    action={resendGuardianSetup}
+                    id={g.id}
+                    label="Resend"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-60"
+                  />
+                </span>
               ) : (
                 <span className="text-xs text-muted-foreground">no login</span>
               )}
@@ -64,7 +75,7 @@ export function GuardianManager({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="g-phone">Phone</Label>
-              <Input id="g-phone" name="phone" placeholder="080…" />
+              <Input id="g-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="080…" />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -73,12 +84,6 @@ export function GuardianManager({
           </div>
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={pending}><UserPlus className="size-4" /> {pending ? "Adding…" : "Add guardian"}</Button>
-            {state && "ok" in state ? (
-              <span className="flex items-center gap-1 text-sm text-brand-600">
-                <Check className="size-4" /> Added
-                {state.loginCreated ? (state.emailSent ? " — setup email sent" : " with login") : ""}.
-              </span>
-            ) : null}
             {state && "error" in state ? <span className="text-sm text-destructive">{state.error}</span> : null}
           </div>
         </form>

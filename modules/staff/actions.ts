@@ -3,10 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
 import { friendlyMessage } from "@/lib/errors";
+import type { ResendState } from "@/components/ui/resend-setup-button";
 import { staffService } from "./service";
 import { addStaffSchema, updateStaffSchema } from "./schema";
 
 export type StaffFormState = { ok: true } | { error: string } | null;
+
+export async function resendStaffSetup(_prev: ResendState, formData: FormData): Promise<ResendState> {
+  const ctx = await requireAuth();
+  const res = await staffService.resendSetupLink(ctx, String(formData.get("id")));
+  if (!res.ok) return { error: friendlyMessage(res.error) };
+  return {
+    ok: true,
+    message: res.data.emailSent ? "Setup link sent." : "Couldn't email it — set RESEND_API_KEY to send links.",
+  };
+}
 
 export async function addStaff(
   _prev: StaffFormState,

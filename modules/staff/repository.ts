@@ -62,7 +62,7 @@ export const staffRepository = {
     const sb = await createClient();
     return sb
       .from("staff")
-      .select("id, full_name, staff_no, phone, qualification, is_teaching, status")
+      .select("id, full_name, staff_no, phone, qualification, is_teaching, status, user_id")
       .eq("school_id", schoolId)
       .eq("id", id)
       .is("deleted_at", null)

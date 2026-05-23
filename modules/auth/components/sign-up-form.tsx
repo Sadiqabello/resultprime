@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { registerSchool, type AuthFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ export function SignUpForm() {
     registerSchool,
     null,
   );
+  useActionToast(state);
 
   return (
     <form action={formAction} className="space-y-4">

@@ -173,6 +173,20 @@ export const studentsService = {
     }
   },
 
+  /** Re-send the password-setup email to a student who already has a login. */
+  async resendSetupLink(ctx: AuthContext, id: string): Promise<Result<{ emailSent: boolean }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const { data: student, error } = await studentsRepository.get(ctx.schoolId, id);
+    if (error || !student) return err("NOT_FOUND", "Student not found.");
+    if (!student.user_id) return err("VALIDATION", "This student has no login yet — create one first.");
+    const email = await authRepository.getUserEmail(student.user_id as string);
+    if (!email) return err("INTERNAL", "Couldn't find the login email.");
+    const emailSent = await sendAccountSetupEmail({ email, schoolId: ctx.schoolId, roleLabel: "student" });
+    await auditService.record({ schoolId: ctx.schoolId, actorId: ctx.userId, action: "student.setup_link_resent", entityType: "student", entityId: id });
+    return ok({ emailSent });
+  },
+
   async setPhotoUrl(ctx: AuthContext, id: string, url: string): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");

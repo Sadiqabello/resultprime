@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import { createSession, type AcademicsFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 
 export function CreateSessionForm() {
   const [state, action, pending] = useActionState<AcademicsFormState, FormData>(createSession, null);
+  useActionToast(state, "Session created");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {

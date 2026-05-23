@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useActionToast } from "@/components/ui/use-action-toast";
 import Link from "next/link";
 import { signIn, type AuthFormState } from "../actions";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
     signIn,
     null,
   );
+  useActionToast(state);
 
   return (
     <form action={formAction} className="space-y-4">

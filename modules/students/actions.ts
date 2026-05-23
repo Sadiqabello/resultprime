@@ -5,8 +5,19 @@ import { requireAuth } from "@/modules/auth/service";
 import { friendlyMessage } from "@/lib/errors";
 import { can } from "@/lib/authz";
 import { uploadImage } from "@/lib/storage";
+import type { ResendState } from "@/components/ui/resend-setup-button";
 import { studentsService } from "./service";
 import { createStudentSchema, updateStudentSchema } from "./schema";
+
+export async function resendStudentSetup(_prev: ResendState, formData: FormData): Promise<ResendState> {
+  const ctx = await requireAuth();
+  const res = await studentsService.resendSetupLink(ctx, String(formData.get("id")));
+  if (!res.ok) return { error: friendlyMessage(res.error) };
+  return {
+    ok: true,
+    message: res.data.emailSent ? "Setup link sent." : "Couldn't email it — set RESEND_API_KEY to send links.",
+  };
+}
 
 export type StudentFormState = { ok: true; message?: string } | { error: string } | null;
 export type UploadResult = { ok: true; url: string } | { ok: false; error: string };

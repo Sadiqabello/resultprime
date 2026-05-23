@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { studentsService } from "@/modules/students/service";
 import { deleteStudent } from "@/modules/students/actions";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { AddStudentForm } from "@/modules/students/components/add-student-form";
 import { can } from "@/lib/authz";
 import { cn } from "@/lib/utils";
@@ -115,10 +116,18 @@ export default async function StudentsPage({
                     <TableCell className="text-right">
                       <span className="flex items-center justify-end gap-3">
                         <Link href={`/students/${s.id}`} className="text-sm font-medium text-primary hover:underline">Manage</Link>
-                        <form action={deleteStudent}>
-                          <input type="hidden" name="id" value={s.id} />
-                          <button type="submit" className="text-sm font-medium text-destructive hover:underline">Remove</button>
-                        </form>
+                        <ConfirmSubmit
+                          action={deleteStudent}
+                          fields={{ id: s.id }}
+                          title="Remove this student?"
+                          description={<>This removes <strong>{s.fullName}</strong> from your active roster. Existing results stay on record, but the student will no longer appear in classes or score sheets.</>}
+                          confirmLabel="Remove student"
+                          successMessage="Student removed"
+                          triggerClassName="text-sm font-medium text-destructive hover:underline"
+                          triggerAriaLabel={`Remove ${s.fullName}`}
+                        >
+                          Remove
+                        </ConfirmSubmit>
                       </span>
                     </TableCell>
                   ) : null}

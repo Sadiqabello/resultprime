@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { useActionToast } from "@/components/ui/use-action-toast";
+
 import { saveClassExtras } from "../actions";
 import type { ClassExtrasView } from "../service";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ type Row = ClassExtrasView["rows"][number];
 export function ExtrasEditor({ classId, view }: { classId: string; view: ClassExtrasView }) {
   const [rows, setRows] = useState<Row[]>(view.rows);
   const [pending, start] = useTransition();
-  const [status, setStatus] = useState<{ ok: true; n: number } | { error: string } | null>(null);
+  const [status, setStatus] = useState<{ ok: true; message: string } | { error: string } | null>(null);
+  useActionToast(status, "Remarks saved");
 
   function patch(i: number, p: Partial<Row>) {
     setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...p } : r)));
@@ -34,7 +36,7 @@ export function ExtrasEditor({ classId, view }: { classId: string; view: ClassEx
           traitRatings: r.traitRatings,
         })),
       });
-      setStatus(res.ok ? { ok: true, n: res.saved } : { error: res.error });
+      setStatus(res.ok ? { ok: true, message: `Saved ${res.saved} student(s).` } : { error: res.error });
     });
   }
 
@@ -144,11 +146,6 @@ export function ExtrasEditor({ classId, view }: { classId: string; view: ClassEx
         <Button onClick={save} disabled={pending}>
           {pending ? "Saving…" : "Save remarks & attendance"}
         </Button>
-        {status && "ok" in status ? (
-          <span className="flex items-center gap-1.5 text-sm text-brand-600">
-            <Check className="size-4" /> Saved {status.n} student{status.n === 1 ? "" : "s"}
-          </span>
-        ) : null}
         {status && "error" in status ? <span className="text-sm text-destructive">{status.error}</span> : null}
       </div>
     </div>

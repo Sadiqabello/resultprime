@@ -80,4 +80,18 @@ export const guardiansService = {
     await auditService.record({ schoolId, actorId: ctx.userId, action: "guardian.add", entityType: "student", entityId: d.studentId, metadata: { guardianId, loginCreated } });
     return ok({ loginCreated, emailSent });
   },
+
+  /** Re-send the password-setup email to a guardian (parent) who already has a login. */
+  async resendSetupLink(ctx: AuthContext, guardianId: string): Promise<Result<{ emailSent: boolean }>> {
+    if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
+    if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const { data: g } = await guardiansRepository.getById(ctx.schoolId, guardianId);
+    if (!g) return err("NOT_FOUND", "Guardian not found.");
+    if (!g.user_id) return err("VALIDATION", "This parent has no login yet.");
+    const email = (g.email as string | null) ?? (await authRepository.getUserEmail(g.user_id as string));
+    if (!email) return err("INTERNAL", "Couldn't find the login email.");
+    const emailSent = await sendAccountSetupEmail({ email, schoolId: ctx.schoolId, roleLabel: "parent" });
+    await auditService.record({ schoolId: ctx.schoolId, actorId: ctx.userId, action: "guardian.setup_link_resent", entityType: "student", entityId: guardianId });
+    return ok({ emailSent });
+  },
 };

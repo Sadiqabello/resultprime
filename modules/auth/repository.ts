@@ -63,6 +63,14 @@ export const authRepository = {
     return data.properties.hashed_token;
   },
 
+  /** The email on an auth user — used to resend a setup link to an existing login. */
+  async getUserEmail(userId: string): Promise<string | null> {
+    const admin = createAdminClient();
+    const { data, error } = await admin.auth.admin.getUserById(userId);
+    if (error || !data?.user) return null;
+    return data.user.email ?? null;
+  },
+
   /** Best-effort cleanup of a just-provisioned user when a later step fails. */
   async deleteUser(userId: string) {
     const admin = createAdminClient();

@@ -53,6 +53,16 @@ export const guardiansRepository = {
     return sb.from("guardians").update({ user_id: userId }).eq("school_id", schoolId).eq("id", guardianId);
   },
 
+  async getById(schoolId: string, guardianId: string) {
+    const sb = await createClient();
+    return sb
+      .from("guardians")
+      .select("id, email, user_id")
+      .eq("school_id", schoolId)
+      .eq("id", guardianId)
+      .maybeSingle();
+  },
+
   async deleteGuardian(schoolId: string, guardianId: string) {
     const sb = await createClient();
     return sb.from("guardians").delete().eq("school_id", schoolId).eq("id", guardianId);
