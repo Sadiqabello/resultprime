@@ -70,7 +70,12 @@ export async function registerSchoolAndAdmin(
       .select("id")
       .single();
     if (data) schoolId = data.id as string;
-    else if (error && error.code !== "23505") return err("INTERNAL", error.message);
+    else if (error && error.code !== "23505") {
+      // Not a slug collision (23505) — a real failure. Log the cause; the slug
+      // retry loop only retries collisions, so we stop here.
+      logger.error("auth.register.school_insert_failed", { code: error.code, error: error.message });
+      return err("INTERNAL", error.message);
+    }
   }
   if (!schoolId) {
     return err("CONFLICT", "Could not generate a unique school address — try a different name.");

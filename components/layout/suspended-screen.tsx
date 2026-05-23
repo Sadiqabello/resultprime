@@ -11,8 +11,8 @@ export function SuspendedScreen({ schoolName, status }: { schoolName: string; st
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Access {status}</h1>
         <p className="text-sm text-muted-foreground">
-          {schoolName}&apos;s access to RPS is currently {status}. Please contact your
-          administrator or RPS support to restore it.
+          {schoolName}&apos;s access to Result Prime is currently {status}. Please contact your
+          administrator or Result Prime support to restore it.
         </p>
       </div>
       <form action={signOut}>

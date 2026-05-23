@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { GraduationCap, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { LogoMarkMono } from "@/components/brand/logo";
 
 export interface AuthBrand {
   name: string;
@@ -9,7 +10,7 @@ export interface AuthBrand {
 
 /**
  * Split-screen auth layout. On a school subdomain it themes to that school's
- * name/logo/colour (resolved from the host); on the apex it shows generic RPS.
+ * name/logo/colour (resolved from the host); on the apex it shows Result Prime.
  */
 export function AuthShell({
   title,
@@ -23,7 +24,7 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   const accent = brand?.primaryColor && /^#[0-9a-f]{6}$/i.test(brand.primaryColor) ? brand.primaryColor : null;
-  const name = brand?.name ?? "RPS";
+  const name = brand?.name ?? "Result Prime";
   const panelStyle = accent ? { backgroundImage: `linear-gradient(135deg, ${accent}, ${accent}cc)` } : undefined;
 
   const Logo = ({ className }: { className?: string }) =>
@@ -31,7 +32,7 @@ export function AuthShell({
       // eslint-disable-next-line @next/next/no-img-element
       <img src={brand.logoUrl} alt="" className={className ?? "size-6 rounded object-contain"} />
     ) : (
-      <GraduationCap className={className ?? "size-6"} />
+      <LogoMarkMono className={className ?? "h-6 w-auto"} />
     );
 
   return (
@@ -72,7 +73,7 @@ export function AuthShell({
         <div className="w-full max-w-sm space-y-6">
           <div className="space-y-2 text-center lg:text-left">
             <Link href="/" className="inline-flex items-center gap-2 font-semibold lg:hidden">
-              <Logo className="size-5 text-primary" />
+              <Logo className="h-5 w-auto text-primary" />
               {name}
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

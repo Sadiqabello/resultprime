@@ -16,11 +16,11 @@ const sans = Hanken_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "RPS — Result Processing System",
-    template: "%s · RPS",
+    default: "Result Prime — Results, at their prime",
+    template: "%s · Result Prime",
   },
   description:
-    "Multi-tenant result processing for primary & secondary schools.",
+    "Result Prime turns raw scores into audited, branded, QR-verified report cards for primary & secondary schools.",
 };
 
 export default function RootLayout({
@@ -28,7 +28,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable}`}>
-      <body className="min-h-screen bg-background font-sans antialiased">{children}</body>
+      {/* suppressHydrationWarning: browser extensions (Grammarly, etc.) inject
+          attributes onto <body> before React hydrates, causing a benign mismatch. */}
+      <body suppressHydrationWarning className="min-h-screen bg-background font-sans antialiased">
+        {children}
+      </body>
     </html>
   );
 }

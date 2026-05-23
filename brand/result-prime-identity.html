@@ -1,0 +1,457 @@
+
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Result Prime — Brand Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --twilight: #03045e;
+    --twilight-deep: #020433;
+    --navy: #012a63;
+    --indigo: #023e8a;
+    --teal: #0077b6;
+    --surf: #00b4d8;
+    --sky: #48cae4;
+    --frost: #90e0ef;
+    --mist: #ade8f4;
+    --cyan: #caf0f8;
+    --paper: #fbfdfe;
+    --ink: #0a0f2c;
+    --muted: #5b6b86;
+    --line: #e3edf3;
+    --display: "Fraunces", Georgia, serif;
+    --sans: "Hanken Grotesk", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--teal); display: inline-flex; align-items: center; gap: 8px;
+  }
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -.02em; line-height: 1.05; }
+  .serif-it { font-style: italic; }
+  section { padding: 96px 0; border-top: 1px solid var(--line); }
+  .grid { display: grid; gap: 28px; }
+
+  /* ---------- spark device ---------- */
+  .spark { display: inline-block; color: #d62f3a; }
+  .spark svg { display: block; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative; overflow: hidden; border: 0;
+    background:
+      radial-gradient(120% 90% at 78% 8%, rgba(0,180,216,.55), transparent 46%),
+      radial-gradient(90% 80% at 12% 92%, rgba(144,224,239,.30), transparent 50%),
+      linear-gradient(150deg, var(--twilight-deep), var(--twilight) 42%, var(--indigo));
+    color: #eaf6fb; padding: 0;
+  }
+  .hero::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+  }
+  .hero-inner { position: relative; z-index: 1; padding: 120px 0 130px; }
+  .hero .lockup { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 54px; }
+  .hero .lockup .word { font-family: var(--display); font-size: 26px; letter-spacing: -.02em; color: #fff; }
+  .hero .lockup .word b { font-weight: 600; }
+  .hero h1 { font-size: clamp(48px, 8vw, 104px); color: #fff; max-width: 14ch; }
+  .hero h1 em { font-style: italic; color: var(--frost); }
+  .hero p.lede { margin-top: 30px; max-width: 52ch; font-size: 19px; color: #bcd9e8; }
+  .hero .meta { margin-top: 56px; display: flex; flex-wrap: wrap; gap: 40px; color: #9fc4d8; font-size: 13px; letter-spacing: .04em; }
+  .hero .meta b { display: block; color: #eaf6fb; font-family: var(--display); font-size: 22px; letter-spacing: 0; margin-bottom: 2px; }
+  .floatspark { position: absolute; color: var(--frost); opacity: .9; z-index: 1; }
+  .fs1 { top: 16%; right: 12%; animation: drift 9s ease-in-out infinite; }
+  .fs2 { bottom: 22%; right: 30%; opacity: .55; animation: drift 7s ease-in-out infinite .8s; }
+  .fs3 { top: 30%; right: 40%; opacity: .35; animation: drift 11s ease-in-out infinite .3s; }
+  @keyframes drift { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-16px) rotate(8deg); } }
+
+  /* entrance */
+  .rise { opacity: 0; transform: translateY(18px); animation: rise .9s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}.d4{animation-delay:.42s}.d5{animation-delay:.56s}
+
+  /* ---------- section heads ---------- */
+  .sechead { max-width: 60ch; margin-bottom: 56px; }
+  .sechead h2 { font-size: clamp(30px, 4.4vw, 46px); margin-top: 16px; }
+  .sechead p { margin-top: 16px; color: var(--muted); font-size: 17px; }
+
+  /* ---------- mark showcase ---------- */
+  .mark-stage {
+    display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: stretch;
+  }
+  .mark-hero {
+    border-radius: 24px; padding: 56px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #fbfaf3, #f0ebdd); color: var(--twilight);
+    box-shadow: inset 0 0 0 1px #e8e2d2, 0 30px 80px -52px rgba(3,4,94,.4); position: relative; overflow: hidden;
+  }
+  .mark-hero .big { width: 280px; height: 226px; }
+  .meaning { display: grid; gap: 16px; }
+  .meaning .card {
+    border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; background: #fff;
+    display: flex; gap: 18px; align-items: flex-start;
+  }
+  .meaning .card .ic {
+    flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(150deg, var(--cyan), var(--mist)); color: var(--teal);
+  }
+  .meaning .card h3 { font-size: 19px; }
+  .meaning .card p { color: var(--muted); font-size: 14.5px; margin-top: 3px; }
+
+  /* variants row */
+  .variants { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
+  .swatchbox { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .swatchbox .top { aspect-ratio: 4/3; display: grid; place-items: center; }
+  .swatchbox .top.light { background: var(--paper); }
+  .swatchbox .top.dark { background: var(--twilight); }
+  .swatchbox .top.tint { background: var(--cyan); }
+  .swatchbox .cap { font-size: 12px; color: var(--muted); padding: 12px 14px; border-top: 1px solid var(--line); letter-spacing: .03em; }
+
+  /* ---------- colour ---------- */
+  .ramp { display: grid; grid-template-columns: repeat(11, 1fr); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px -34px rgba(3,4,94,.5); }
+  .ramp .stop { aspect-ratio: 1/1.5; position: relative; }
+  .ramp .stop span { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 9.5px; font-family: var(--sans); letter-spacing: .02em; }
+  .keycolors { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 18px; margin-top: 30px; }
+  .keycolors .kc { border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .keycolors .chip { height: 60px; border-radius: 10px; margin-bottom: 14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+  .keycolors .kc .nm { font-family: var(--display); font-size: 17px; }
+  .keycolors .kc .hex { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .04em; text-transform: uppercase; }
+  .keycolors .kc .role { font-size: 13px; color: var(--ink); margin-top: 8px; }
+
+  /* ---------- type ---------- */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .type-card { border: 1px solid var(--line); border-radius: 20px; padding: 36px; background: #fff; }
+  .type-card .label { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); font-size: 13px; margin-bottom: 22px; letter-spacing: .04em; }
+  .type-card .label b { color: var(--teal); font-weight: 600; }
+  .specimen-display { font-family: var(--display); font-size: 78px; line-height: .95; letter-spacing: -.02em; }
+  .specimen-display .it { font-style: italic; color: var(--teal); }
+  .aaa { font-family: var(--display); font-size: 30px; line-height: 1.25; margin-top: 18px; }
+  .specimen-sans { font-family: var(--sans); }
+  .specimen-sans .xl { font-size: 40px; font-weight: 700; letter-spacing: -.01em; }
+  .specimen-sans .row { display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; color: var(--muted); font-size: 14px; }
+  .specimen-sans .row b { color: var(--ink); }
+  .specimen-sans p { margin-top: 18px; font-size: 15px; color: var(--ink); }
+  .nums { font-variant-numeric: tabular-nums; font-weight:600; font-size: 26px; margin-top: 20px; letter-spacing: .02em; }
+
+  /* ---------- voice ---------- */
+  .voice { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .voice .v { border-radius: 18px; padding: 26px; }
+  .voice .do { background: linear-gradient(150deg, #f1fbff, #fff); border: 1px solid var(--line); }
+  .voice .dont { background: #fff; border: 1px solid var(--line); }
+  .voice h3 { font-size: 18px; display:flex; align-items:center; gap:10px; }
+  .voice ul { list-style: none; margin-top: 16px; display:grid; gap: 12px; }
+  .voice li { font-size: 15px; padding-left: 26px; position: relative; color: var(--ink); }
+  .voice .do li::before { content: ""; position:absolute; left:0; top:7px; width:12px; height:12px; background: var(--surf); clip-path: polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%); }
+  .voice .dont li::before { content: "—"; position:absolute; left:2px; top:-1px; color: var(--muted); }
+
+  /* ---------- applications ---------- */
+  .apps { display:grid; grid-template-columns: 1.1fr .9fr; gap: 24px; }
+  .appcol { display:grid; gap: 24px; }
+  .report {
+    border-radius: 20px; border: 1px solid var(--line); background:#fff; overflow:hidden;
+    box-shadow: 0 30px 70px -45px rgba(3,4,94,.45);
+  }
+  .report .rhead { background: linear-gradient(150deg, var(--twilight), var(--indigo)); color:#fff; padding: 22px 26px; display:flex; align-items:center; justify-content:space-between; }
+  .report .rhead .s { display:flex; align-items:center; gap:12px; }
+  .report .rhead .s .nm { font-family: var(--display); font-size: 18px; }
+  .report .rhead .s .sub { font-size: 11px; color:#a9cfe2; letter-spacing:.06em; text-transform:uppercase; }
+  .report .verified { font-size: 11px; background: rgba(144,224,239,.18); border:1px solid rgba(144,224,239,.4); color: var(--frost); padding: 5px 11px; border-radius: 999px; display:flex; align-items:center; gap:6px; }
+  .report .rbody { padding: 24px 26px; }
+  .report table { width:100%; border-collapse: collapse; font-size: 13.5px; }
+  .report th { text-align:left; color: var(--muted); font-weight:600; font-size: 11px; letter-spacing:.06em; text-transform:uppercase; padding-bottom:10px; border-bottom: 1px solid var(--line); }
+  .report td { padding: 11px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .report td:last-child, .report th:last-child { text-align:right; }
+  .report .grade { font-weight:700; color: var(--teal); }
+  .report .rfoot { display:flex; align-items:center; justify-content:space-between; padding: 18px 26px; background: var(--paper); border-top:1px solid var(--line); }
+  .report .rfoot .agg { font-family: var(--display); font-size: 15px; }
+  .report .rfoot .agg b { color: var(--teal); }
+  .qr { width:46px; height:46px; border-radius:8px; background:
+      conic-gradient(from 0deg, var(--twilight) 0 25%, transparent 0 50%, var(--twilight) 0 75%, transparent 0);
+      background-size: 12px 12px; border:1px solid var(--line); }
+
+  .btns { border:1px solid var(--line); border-radius:18px; padding: 26px; background:#fff; display:grid; gap:14px; }
+  .btns .lbl { font-size:12px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+  .btn { font-family: var(--sans); font-weight:600; font-size:14.5px; border-radius:11px; padding: 11px 18px; border:0; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition: transform .15s, box-shadow .15s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--teal); color:#fff; box-shadow: 0 12px 24px -12px rgba(0,119,182,.8); }
+  .btn-accent { background: var(--surf); color: var(--twilight); box-shadow: 0 12px 24px -12px rgba(0,180,216,.8); font-weight:700; }
+  .btn-ghost { background: var(--cyan); color: var(--teal); }
+  .btn-outline { background:#fff; color: var(--teal); box-shadow: inset 0 0 0 1.5px var(--teal); }
+  .iconrow { display:flex; gap:18px; align-items:center; margin-top:6px; }
+  .iconrow .tile { border-radius:22%; box-shadow: 0 14px 30px -16px rgba(3,4,94,.6); }
+
+  /* ---------- footer ---------- */
+  .foot { background: var(--twilight-deep); color:#9fc4d8; border:0; padding: 64px 0; }
+  .foot .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px; }
+  .foot .lockup { display:flex; align-items:center; gap:12px; color:#fff; font-family:var(--display); font-size:20px; }
+  .foot small { font-size: 12.5px; letter-spacing:.04em; }
+
+  @media (max-width: 860px) {
+    .mark-stage, .type-grid, .voice, .apps { grid-template-columns: 1fr; }
+    .variants { grid-template-columns: repeat(2,1fr); }
+    .ramp { grid-template-columns: repeat(11,1fr); }
+    .hero h1 { font-size: clamp(40px,12vw,72px); }
+    section { padding: 72px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <span class="floatspark fs1">__SPARK48__</span>
+  <span class="floatspark fs2">__SPARK28__</span>
+  <span class="floatspark fs3">__SPARK20__</span>
+  <div class="wrap hero-inner">
+    <div class="lockup rise d1">
+      <span style="width:54px;height:44px;display:inline-block">__MARK__</span>
+      <span class="word">Result&nbsp;<b>Prime</b></span>
+    </div>
+    <span class="eyebrow rise d1">Brand Identity · v1.0</span>
+    <h1 class="rise d2">Results, at their <em>prime.</em></h1>
+    <p class="lede rise d3">The identity system for Result Prime — result processing for primary &amp; secondary schools. Built on trust, audit, and the quiet confidence of a job done right.</p>
+    <div class="meta rise d4">
+      <div><b>Navy&nbsp;+&nbsp;Crimson</b>#03045E · #D62F3A</div>
+      <div><b>Fraunces</b>Editorial display serif</div>
+      <div><b>Hanken&nbsp;Grotesk</b>Functional body sans</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ LOGO ============ -->
+  <section>
+    <div class="wrap">
+      <div class="sechead">
+        <span class="eyebrow">__SPARKMINI__ The mark</span>
+        <h2>A serif <span class="serif-it">R</span>, signed with a check.</h2>
+        <p>The letterform of record meets the mark of approval. A Times-style <strong>R</strong> — for Result — fused with a crimson check that sweeps up to a fine point. Verified results, carried to their prime.</p>
+      </div>
+
+      <div class="mark-stage">
+        <div class="mark-hero">
+          <span class="big">__MARK__</span>
+        </div>
+        <div class="meaning">
+          <div class="card">
+            <span class="ic"><span style="width:30px;height:24px;display:block;color:var(--twilight)">__MARK__</span></span>
+            <div><h3>R is for Result</h3><p>A classic serif R — the authority and tradition of a result that actually counts.</p></div>
+          </div>
+          <div class="card">
+            <span class="ic" style="color:#d62f3a">__SPARK20__</span>
+            <div><h3>Signed with a check</h3><p>The crimson check is correctness made visible — audited, locked on approval, QR-verifiable.</p></div>
+          </div>
+          <div class="card">
+            <span class="ic">__ARROW__</span>
+            <div><h3>The rising tail — prime</h3><p>The check lifts to a fine point: every result carried up to its best.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variants">
+        <div class="swatchbox"><div class="top light"><span style="width:90px;height:72px;display:block;color:var(--twilight)">__MARK__</span></div><div class="cap">Navy · on paper</div></div>
+        <div class="swatchbox"><div class="top dark"><span style="width:90px;height:72px;display:block;color:var(--paper)">__MARK__</span></div><div class="cap">Reversed · on twilight</div></div>
+        <div class="swatchbox"><div class="top tint"><span style="width:90px;height:72px;display:block;color:var(--twilight)">__MARK__</span></div><div class="cap">Navy · on cyan</div></div>
+        <div class="swatchbox"><div class="top dark"><span style="width:62px;height:62px;display:block">__APPICON__</span></div><div class="cap">App icon</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COLOUR ============ -->
+  <section style="background:linear-gradient(180deg,#f6fbfd,var(--paper));">
+    <div class="wrap">
+      <div class="sechead">
+        <span class="eyebrow">__SPARKMINI__ Colour</span>
+        <h2>Deep water, bright surf.</h2>
+        <p>An eleven-stop ramp from Light Cyan to near-black Federal Blue. Lead with twilight ink and plenty of paper; let Turquoise Surf and the Frost spark do the talking.</p>
+      </div>
+
+      <div class="ramp">
+        <div class="stop" style="background:#caf0f8"><span style="color:#03045e">50</span></div>
+        <div class="stop" style="background:#ade8f4"><span style="color:#03045e">100</span></div>
+        <div class="stop" style="background:#90e0ef"><span style="color:#03045e">200</span></div>
+        <div class="stop" style="background:#48cae4"><span style="color:#03045e">300</span></div>
+        <div class="stop" style="background:#00b4d8"><span style="color:#03045e">400</span></div>
+        <div class="stop" style="background:#0096c7"><span style="color:#fff">500</span></div>
+        <div class="stop" style="background:#0077b6"><span style="color:#fff">600</span></div>
+        <div class="stop" style="background:#023e8a"><span style="color:#fff">700</span></div>
+        <div class="stop" style="background:#012a63"><span style="color:#fff">800</span></div>
+        <div class="stop" style="background:#03045e"><span style="color:#fff">900</span></div>
+        <div class="stop" style="background:#020433"><span style="color:#fff">950</span></div>
+      </div>
+
+      <div class="keycolors">
+        <div class="kc"><div class="chip" style="background:#03045e"></div><div class="nm">Deep Twilight</div><div class="hex">#03045E · 900</div><div class="role">Brand anchor, ink, dark surfaces.</div></div>
+        <div class="kc"><div class="chip" style="background:#0077b6"></div><div class="nm">Bright Teal Blue</div><div class="hex">#0077B6 · 600</div><div class="role">Primary actions &amp; links.</div></div>
+        <div class="kc"><div class="chip" style="background:#00b4d8"></div><div class="nm">Turquoise Surf</div><div class="hex">#00B4D8 · 400</div><div class="role">Energetic accent, gradient end.</div></div>
+        <div class="kc"><div class="chip" style="background:#90e0ef"></div><div class="nm">Frost</div><div class="hex">#90E0EF · 200</div><div class="role">Soft highlights &amp; surfaces.</div></div>
+        <div class="kc"><div class="chip" style="background:#caf0f8"></div><div class="nm">Light Cyan</div><div class="hex">#CAF0F8 · 50</div><div class="role">Tints, calm fields.</div></div>
+        <div class="kc"><div class="chip" style="background:#d62f3a"></div><div class="nm">Verify Crimson</div><div class="hex">#D62F3A</div><div class="role">The mark's check; reserved for the logo &amp; "verified".</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TYPE ============ -->
+  <section>
+    <div class="wrap">
+      <div class="sechead">
+        <span class="eyebrow">__SPARKMINI__ Typography</span>
+        <h2>Editorial voice, functional hand.</h2>
+        <p>Fraunces brings warmth and authority to headlines and the wordmark. Hanken Grotesk keeps interfaces, tables and tabular figures crisp and legible on any phone.</p>
+      </div>
+      <div class="type-grid">
+        <div class="type-card">
+          <div class="label"><span>Display</span><b>Fraunces</b></div>
+          <div class="specimen-display">Aa<span class="it">Bb</span></div>
+          <div class="aaa">Results, at their <span class="it">prime.</span></div>
+          <div class="specimen-sans"><div class="row"><span><b>Light</b> 300</span><span><b>Regular</b> 400</span><span><b>Semibold</b> 600</span><span><b>Italic</b></span></div></div>
+        </div>
+        <div class="type-card">
+          <div class="label"><span>Body &amp; UI</span><b>Hanken Grotesk</b></div>
+          <div class="specimen-sans">
+            <div class="xl">The quiet confidence of a job done right.</div>
+            <p>From raw scores to approved, branded report cards — Result Prime keeps every number auditable and every parent informed. Phone-first, light on data, calm under pressure.</p>
+            <div class="nums">A1 · 92.4% · 1st of 48 · GPA 4.95</div>
+            <div class="row"><span><b>Regular</b> 400</span><span><b>Medium</b> 500</span><span><b>Semibold</b> 600</span><span><b>Bold</b> 700</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VOICE ============ -->
+  <section style="background:linear-gradient(180deg,var(--paper),#f6fbfd);">
+    <div class="wrap">
+      <div class="sechead">
+        <span class="eyebrow">__SPARKMINI__ Voice &amp; tone</span>
+        <h2>Plain words. Real numbers. No surprises.</h2>
+        <p>We speak to head teachers, exam officers and parents — busy people who need to trust what they read. Clear, warm, and grounded; never jargon, never hype.</p>
+      </div>
+      <div class="voice">
+        <div class="v do">
+          <h3><span class="spark">__SPARK20__</span> We sound like</h3>
+          <ul>
+            <li>“Your results are published. Parents can view them now.”</li>
+            <li>“Every change is recorded — who, and when.”</li>
+            <li>“Set up your school in a day. We’ll walk you through it.”</li>
+            <li>Confident, specific, encouraging.</li>
+          </ul>
+        </div>
+        <div class="v dont">
+          <h3>We avoid</h3>
+          <ul>
+            <li>“Revolutionary AI-powered synergy platform.”</li>
+            <li>“Leverage best-in-class result paradigms.”</li>
+            <li>Shouting, exclamation marks, false urgency.</li>
+            <li>Acronyms a parent wouldn’t know.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ APPLICATIONS ============ -->
+  <section>
+    <div class="wrap">
+      <div class="sechead">
+        <span class="eyebrow">__SPARKMINI__ In the wild</span>
+        <h2>The system, applied.</h2>
+        <p>The brand earns its keep on the report card, in the buttons, and on the home screen.</p>
+      </div>
+      <div class="apps">
+        <div class="report">
+          <div class="rhead">
+            <div class="s">
+              <span style="width:34px;height:34px;display:block">__MARK__</span>
+              <div><div class="nm">Bright Future Academy</div><div class="sub">First Term · 2025/26 · JSS 1A</div></div>
+            </div>
+            <span class="verified"><span class="spark" style="color:var(--frost);width:12px;height:12px;display:inline-block">__SPARK12__</span> Verified</span>
+          </div>
+          <div class="rbody">
+            <table>
+              <thead><tr><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Grade</th></tr></thead>
+              <tbody>
+                <tr><td>Mathematics</td><td>38</td><td>56</td><td>94</td><td class="grade">A1</td></tr>
+                <tr><td>English</td><td>34</td><td>52</td><td>86</td><td class="grade">A1</td></tr>
+                <tr><td>Basic Science</td><td>31</td><td>48</td><td>79</td><td class="grade">B2</td></tr>
+                <tr><td>Civic Education</td><td>36</td><td>54</td><td>90</td><td class="grade">A1</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="rfoot">
+            <div class="agg">Average <b>87.3%</b> &nbsp;·&nbsp; Position <b>1st</b> of 48</div>
+            <div class="qr" title="Scan to verify"></div>
+          </div>
+        </div>
+
+        <div class="appcol">
+          <div class="btns">
+            <span class="lbl">Buttons</span>
+            <div><button class="btn btn-primary">Publish results</button></div>
+            <div><button class="btn btn-accent"><span class="spark" style="color:var(--twilight);width:14px;height:14px;display:inline-block">__SPARK14__</span> Approve &amp; lock</button></div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button class="btn btn-outline">Export broadsheet</button>
+              <button class="btn btn-ghost">Preview card</button>
+            </div>
+          </div>
+          <div class="btns">
+            <span class="lbl">App icon</span>
+            <div class="iconrow">
+              <span class="tile" style="width:84px;height:84px;display:block">__APPICON__</span>
+              <span class="tile" style="width:56px;height:56px;display:block">__APPICON__</span>
+              <span class="tile" style="width:40px;height:40px;display:block">__APPICON__</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="lockup"><span style="width:34px;height:34px;display:block">__MARK__</span> Result&nbsp;Prime</div>
+    <small>Brand identity v1.0 · Federal Blue palette · Fraunces &amp; Hanken Grotesk</small>
+  </div>
+</footer>
+
+<script>
+  // Single source of truth for the marks, injected wherever a token appears.
+  // The monogram is a monoline in currentColor — its container sets the colour.
+  // Tinos 400 "R" outline (font units); seated via the <g> transform.
+  const RPATH = "M424 588V80L627 53V0H72V53L231 80V1262L59 1288V1341H638Q890 1341 1010.0 1256.0Q1130 1171 1130 983Q1130 849 1057.0 751.5Q984 654 855 616L1218 80L1363 53V0H1042L665 588ZM931 969Q931 1122 856.5 1186.5Q782 1251 595 1251H424V678H601Q780 678 855.5 744.5Q931 811 931 969Z";
+  const MARK = `<svg viewBox="0 0 124 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"><g transform="translate(12.92 86) scale(0.0522 -0.0522)"><path d="${RPATH}" fill="currentColor"/></g><path d="M39 57 L50 75 L112 10 L57 60 Z" fill="#D62F3A"/></svg>`;
+  const MARKMONO = MARK;
+  const APPICON = `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"><rect width="100" height="100" rx="22" fill="#03045E"/><g transform="translate(17.54 72) scale(0.04175 -0.04175)"><path d="${RPATH}" fill="#F4F1E8"/></g><path d="M34 55 L43 69 L86 19 L48 57 Z" fill="#D62F3A"/></svg>`;
+  // The accent device is the check (echoing the mark).
+  const spark = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 L9 18.5 L20 5.5" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const arrow = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20 L20 4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M9 4 H20 V15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  document.body.innerHTML = document.body.innerHTML
+    .replaceAll("__APPICON__", APPICON)
+    .replaceAll("__MARKMONO__", MARKMONO)
+    .replaceAll("__MARK__", MARK)
+    .replaceAll("__ARROW__", arrow)
+    .replaceAll("__LINE__", arrow)
+    .replaceAll("__SPARKMINI__", `<span class="spark" style="width:13px;height:13px;display:inline-block">${spark(13)}</span>`)
+    .replaceAll("__SPARK48__", spark(48))
+    .replaceAll("__SPARK28__", spark(28))
+    .replaceAll("__SPARK20__", spark(20))
+    .replaceAll("__SPARK14__", spark(14))
+    .replaceAll("__SPARK12__", spark(12));
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import type { AuthContext } from "@/lib/authz";
+import { Logo } from "@/components/brand/logo";
 import { Sidebar } from "./sidebar";
 
 /**
@@ -22,7 +23,9 @@ export function AppShell({
       <Sidebar ctx={ctx} unread={unread} />
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b px-6">
-          <span className="text-sm font-medium">RPS</span>
+          <Link href="/dashboard" aria-label="Result Prime">
+            <Logo markClassName="h-7 w-auto" wordmarkClassName="text-base" />
+          </Link>
           <div className="flex items-center gap-4">
             <Link href="/notifications" className="relative text-muted-foreground hover:text-foreground" aria-label="Notifications">
               <Bell className="size-5" />

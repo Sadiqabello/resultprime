@@ -21,7 +21,7 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // RPS brand ramp. The 5 stops marked ★ are the exact brand palette;
+        // Result Prime brand ramp. The 5 stops marked ★ are the exact brand palette;
         // the others are the canonical companion shades that complete the scale.
         // Use directly (e.g. `bg-brand-600`, `text-brand-950`) or via the
         // semantic shadcn tokens below, which are driven from these in globals.css.

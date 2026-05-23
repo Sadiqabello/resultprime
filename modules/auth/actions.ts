@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { friendlyMessage } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { signInSchema, registerSchoolSchema } from "./schema";
 import { getAuthContext, registerSchoolAndAdmin } from "./service";
 
@@ -55,7 +56,17 @@ export async function registerSchool(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
-  const result = await registerSchoolAndAdmin(parsed.data);
+  // Wrap only the provisioning (NOT the redirect below — redirect() throws a
+  // control-flow signal that must propagate). An unexpected throw here (e.g.
+  // the admin client failing because env vars weren't loaded) otherwise becomes
+  // an opaque error; log the real cause and show the friendly message.
+  let result: Awaited<ReturnType<typeof registerSchoolAndAdmin>>;
+  try {
+    result = await registerSchoolAndAdmin(parsed.data);
+  } catch (e) {
+    logger.error("auth.register.unexpected", { error: (e as Error).message });
+    return { error: "Something went wrong. Please try again." };
+  }
   if (!result.ok) return { error: friendlyMessage(result.error) };
 
   // Establish the session for the freshly-created admin.

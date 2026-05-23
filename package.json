@@ -1,8 +1,8 @@
 {
-  "name": "rps",
+  "name": "result-prime",
   "version": "0.1.0",
   "private": true,
-  "description": "Result Processing System — multi-tenant SaaS for primary & secondary schools",
+  "description": "Result Prime — multi-tenant result processing for primary & secondary schools",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

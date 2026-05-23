@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, XCircle, GraduationCap } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo";
 import { reportsService } from "@/modules/reports/service";
 import { ordinal } from "@/lib/utils";
 
@@ -22,11 +23,9 @@ export default async function VerifyPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-12">
-      <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-brand-950">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-400 text-white">
-          <GraduationCap className="size-4" />
-        </span>
-        RPS
+      <Link href="/" className="flex items-center gap-2.5 font-display text-lg tracking-tight text-brand-950" aria-label="Result Prime">
+        <LogoMark className="h-8 w-auto" />
+        <span><span className="font-normal">Result</span> <span className="font-semibold">Prime</span></span>
       </Link>
 
       {summary ? (

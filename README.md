@@ -1,6 +1,6 @@
-# RPS — Result Processing System
+# Result Prime — Results, at their prime
 
-Multi-tenant SaaS for primary & secondary schools. Built with Next.js (App
+Multi-tenant result processing for primary & secondary schools. Built with Next.js (App
 Router), TypeScript, shadcn/ui, Tailwind CSS, and Supabase (PostgreSQL / Auth /
 Storage).
 
