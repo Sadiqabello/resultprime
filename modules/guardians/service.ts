@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
@@ -44,6 +45,8 @@ export const guardiansService = {
   async add(ctx: AuthContext, input: AddGuardianInput): Promise<Result<{ loginCreated: boolean; emailSent: boolean }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = ctx.schoolId;
 
     const parsed = addGuardianSchema.safeParse(input);

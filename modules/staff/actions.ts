@@ -60,6 +60,9 @@ export async function updateStaff(_prev: StaffFormState, formData: FormData): Pr
 
 export async function deleteStaff(formData: FormData): Promise<void> {
   const ctx = await requireAuth();
-  await staffService.remove(ctx, String(formData.get("id")));
+  const res = await staffService.remove(ctx, String(formData.get("id")));
+  // Throw on failure so the confirm dialog surfaces it instead of falsely
+  // reporting "Staff removed".
+  if (!res.ok) throw new Error(friendlyMessage(res.error));
   revalidatePath("/staff");
 }

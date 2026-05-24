@@ -825,7 +825,7 @@ function Colophon() {
   const cols: { title: string; links: [string, string][] }[] = [
     { title: "Product", links: [["How it works", "#how"], ["The engine", "#features"], ["On the record", "#security"], ["Fees", "#pricing"], ["Appendix", "#faq"]] },
     { title: "Account", links: [["Create your school", "/signup"], ["Sign in", "/login"]] },
-    { title: "Legal", links: [["Privacy", "#"], ["Terms", "#"]] }, // PLACEHOLDER: real legal pages
+    { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
   ];
   return (
     <footer className="border-t-[3px] border-double border-[#0a1130]/25 bg-[#FAF7EF]">

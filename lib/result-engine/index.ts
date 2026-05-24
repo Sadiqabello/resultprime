@@ -18,7 +18,7 @@ import type {
 export * from "./types";
 export { aggregateSubject, obtainableTotal, round } from "./aggregate";
 export { resolveGrade, validateGradeBands } from "./grade";
-export { rank } from "./rank";
+export { rank, type Rankable } from "./rank";
 export { aggregateTerm } from "./term-aggregate";
 export { aggregateCumulative, type CumulativeAggregate } from "./cumulative";
 export { evaluatePromotion } from "./promotion";

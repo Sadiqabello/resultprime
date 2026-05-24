@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
@@ -57,6 +58,8 @@ export const cumulativeService = {
   async computeSession(ctx: AuthContext, classId: string): Promise<Result<{ students: number; terms: number }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "results.compute")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = ctx.schoolId;
 
     const { data: term } = await cumulativeRepository.getCurrentTerm(schoolId);

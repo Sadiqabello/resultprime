@@ -57,9 +57,26 @@ async function upstashLimit(key: string, { max, windowMs }: LimitOptions): Promi
   }
 }
 
+let warnedMemoryInProd = false;
+
 export async function rateLimit(key: string, opts: LimitOptions): Promise<LimitResult> {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     return upstashLimit(key, opts);
+  }
+  // The in-memory limiter only holds within one instance. On serverless or any
+  // multi-replica deployment that silently weakens brute-force + abuse limits —
+  // warn loudly once so it can't be missed in prod. Set UPSTASH_* to fix.
+  const multiInstance =
+    process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_EXECUTION_ENV;
+  if (!warnedMemoryInProd && (multiInstance || process.env.NODE_ENV === "production")) {
+    warnedMemoryInProd = true;
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        message: "rate-limit: using in-memory limiter in a multi-instance/production context; set UPSTASH_REDIS_REST_URL/TOKEN for global limits",
+        ts: new Date().toISOString(),
+      }),
+    );
   }
   return memoryLimit(key, opts);
 }

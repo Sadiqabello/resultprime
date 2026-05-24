@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database.types";
 import type { SubjectResult } from "@/lib/result-engine";
 
 export interface TermResultRow {
@@ -80,32 +81,38 @@ export const resultsRepository = {
       .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
   },
 
-  async loadScores(schoolId: string, classSubjectId: string, termId: string) {
+  /** All scores for a set of class-subjects in one round-trip (keyed by subject). */
+  async loadScoresForClassSubjects(schoolId: string, classSubjectIds: string[], termId: string) {
     const sb = await createClient();
     return sb
       .from("scores")
-      .select("enrollment_id, assessment_component_id, score, is_absent, is_exempt")
+      .select("class_subject_id, enrollment_id, assessment_component_id, score, is_absent, is_exempt")
       .eq("school_id", schoolId)
-      .eq("class_subject_id", classSubjectId)
+      .in("class_subject_id", classSubjectIds.length ? classSubjectIds : ["00000000-0000-0000-0000-000000000000"])
       .eq("term_id", termId)
       .is("deleted_at", null);
   },
 
+  /**
+   * Bulk-upsert computed subject results for the WHOLE class in one statement.
+   * Each row already carries its class_subject_id + subject_id, so all subjects
+   * persist together rather than one round-trip per subject.
+   */
   async upsertSubjectResults(
     schoolId: string,
-    classSubjectId: string,
     termId: string,
-    subjectId: string,
-    results: SubjectResult[],
-    configSnapshot: unknown,
     subjectCount: number,
+    results: (SubjectResult & { classSubjectId: string; subjectId: string })[],
+    configSnapshot: unknown,
   ) {
     const sb = await createClient();
+    if (results.length === 0) return { error: null };
+    const now = new Date().toISOString();
     const rows = results.map((r) => ({
       school_id: schoolId,
       enrollment_id: r.studentRef,
-      class_subject_id: classSubjectId,
-      subject_id: subjectId,
+      class_subject_id: r.classSubjectId,
+      subject_id: r.subjectId,
       term_id: termId,
       ca_total: r.caTotal,
       exam_score: r.examScore,
@@ -116,9 +123,9 @@ export const resultsRepository = {
       subject_position: r.subjectPosition,
       subject_count: subjectCount,
       is_absent: r.isAbsent,
-      config_snapshot: configSnapshot,
-      computed_at: new Date().toISOString(),
-      status: "computed",
+      config_snapshot: configSnapshot as Json,
+      computed_at: now,
+      status: "computed" as const,
     }));
     return sb.from("results").upsert(rows, {
       onConflict: "school_id,enrollment_id,class_subject_id,term_id",
@@ -140,9 +147,9 @@ export const resultsRepository = {
         average: r.average,
         class_position: r.classPosition,
         class_size: r.classSize,
-        config_snapshot: configSnapshot,
+        config_snapshot: configSnapshot as Json,
         computed_at: now,
-        status: "computed",
+        status: "computed" as const,
       })),
       { onConflict: "school_id,enrollment_id,term_id" },
     );

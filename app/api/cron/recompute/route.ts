@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { recomputeActive } from "@/modules/results/system";
+import { isAuthorizedCron } from "@/lib/cron";
 import { logger } from "@/lib/logger";
 
 /**
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCron(request)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
   let schoolId: string | undefined;

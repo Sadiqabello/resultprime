@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import {
@@ -52,6 +53,8 @@ export const resultsService = {
   async computeClass(ctx: AuthContext, classId: string): Promise<Result<{ subjects: number; students: number }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "results.compute")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = ctx.schoolId;
 
     // Config: components (for id→key) + the engine config snapshot.
@@ -76,16 +79,31 @@ export const resultsService = {
     const enrollmentIds = (enr ?? []).map((e) => e.id as string);
     if (enrollmentIds.length === 0) return err("CONFLICT", "No students enrolled in this class for the term.");
 
+    // Load every score for the class's subjects in ONE round-trip, then group by
+    // class-subject in memory (was a query per subject — O(subjects) round-trips).
+    const classSubjectIds = csRows.map((cs) => cs.id as string);
+    const { data: allScores } = await resultsRepository.loadScoresForClassSubjects(schoolId, classSubjectIds, termId);
+    const scoresByCs = new Map<string, typeof allScores>();
+    for (const row of allScores ?? []) {
+      const list = scoresByCs.get(row.class_subject_id) ?? [];
+      list.push(row);
+      scoresByCs.set(row.class_subject_id, list);
+    }
+
     // Per-student accumulation of subject totals for the term aggregate.
     const termAcc = new Map<string, { subjectId: string; total: number; obtainable: number; isExempt: boolean }[]>();
     for (const id of enrollmentIds) termAcc.set(id, []);
 
-    for (const cs of csRows) {
-      const { data: scoreRows } = await resultsRepository.loadScores(schoolId, cs.id, termId);
+    // Compute every subject in memory, collecting all rows for a single bulk upsert.
+    const allSubjectResults: (ReturnType<typeof computeClassSubjectResults>[number] & {
+      classSubjectId: string;
+      subjectId: string;
+    })[] = [];
 
+    for (const cs of csRows) {
       const byStudent = new Map<string, StudentScores>();
       for (const id of enrollmentIds) byStudent.set(id, { studentRef: id, scores: [] });
-      for (const row of scoreRows ?? []) {
+      for (const row of scoresByCs.get(cs.id) ?? []) {
         const entry = byStudent.get(row.enrollment_id);
         const key = idToKey.get(row.assessment_component_id);
         if (!entry || !key) continue;
@@ -99,18 +117,8 @@ export const resultsService = {
       }
 
       const subjectResults = computeClassSubjectResults([...byStudent.values()], config);
-      const { error: upErr } = await resultsRepository.upsertSubjectResults(
-        schoolId,
-        cs.id,
-        termId,
-        cs.subject_id,
-        subjectResults,
-        config,
-        subjectResults.length,
-      );
-      if (upErr) return err("INTERNAL", upErr.message);
-
       for (const r of subjectResults) {
+        allSubjectResults.push({ ...r, classSubjectId: cs.id as string, subjectId: cs.subject_id });
         termAcc.get(r.studentRef)?.push({
           subjectId: cs.subject_id,
           total: r.total,
@@ -119,6 +127,15 @@ export const resultsService = {
         });
       }
     }
+
+    const { error: upErr } = await resultsRepository.upsertSubjectResults(
+      schoolId,
+      termId,
+      enrollmentIds.length,
+      allSubjectResults,
+      config,
+    );
+    if (upErr) return err("INTERNAL", upErr.message);
 
     // Term aggregate + class ranking by average.
     const aggs = enrollmentIds.map((id) => ({

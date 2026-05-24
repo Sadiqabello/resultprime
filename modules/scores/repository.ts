@@ -116,7 +116,7 @@ export const scoresRepository = {
       is_absent: c.isAbsent,
       is_exempt: c.isExempt,
       entered_by: enteredBy,
-      status: "draft",
+      status: "draft" as const,
     }));
     return sb.from("scores").upsert(rows, {
       onConflict: "school_id,enrollment_id,class_subject_id,assessment_component_id,term_id",

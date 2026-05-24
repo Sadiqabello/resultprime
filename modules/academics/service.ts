@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import {
   createClassSchema,
@@ -94,6 +95,8 @@ export const academicsService = {
   async createSession(ctx: AuthContext, input: CreateSessionInput): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = createSessionSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid input.");
 
@@ -124,6 +127,8 @@ export const academicsService = {
   async setCurrentSession(ctx: AuthContext, sessionId: string): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     await academicsRepository.clearCurrentSessions(g.data);
     const { error } = await academicsRepository.markSessionCurrent(g.data, sessionId);
     if (error) return err("INTERNAL", error.message);
@@ -136,6 +141,8 @@ export const academicsService = {
   async setCurrentTerm(ctx: AuthContext, termId: string): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { data: term, error } = await academicsRepository.getTerm(g.data, termId);
     if (error || !term) return err("NOT_FOUND", "Term not found.");
 
@@ -167,6 +174,8 @@ export const academicsService = {
   async createClass(ctx: AuthContext, input: CreateClassInput): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = createClassSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid input.");
     const { error } = await academicsRepository.insertClass(g.data, parsed.data, ctx.userId);
@@ -177,6 +186,8 @@ export const academicsService = {
   async removeClass(ctx: AuthContext, id: string): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { error } = await academicsRepository.softDeleteClass(g.data, id, ctx.userId);
     if (error) return err("INTERNAL", error.message);
     return ok(null);
@@ -201,6 +212,8 @@ export const academicsService = {
   async createSubject(ctx: AuthContext, input: CreateSubjectInput): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = createSubjectSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid input.");
     const { error } = await academicsRepository.insertSubject(g.data, parsed.data);
@@ -214,6 +227,8 @@ export const academicsService = {
   async removeSubject(ctx: AuthContext, id: string): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { error } = await academicsRepository.softDeleteSubject(g.data, id);
     if (error) return err("INTERNAL", error.message);
     return ok(null);
@@ -259,6 +274,8 @@ export const academicsService = {
   async saveClassAssignment(ctx: AuthContext, input: SaveAssignmentInput): Promise<Result<null>> {
     const g = guard(ctx);
     if (!g.ok) return g;
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = g.data;
 
     const parsed = saveAssignmentSchema.safeParse(input);

@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
@@ -75,6 +76,8 @@ export const studentsService = {
   async create(ctx: AuthContext, input: CreateStudentInput): Promise<Result<{ id: string }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "students.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
 
     const parsed = createStudentSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid student details.");
@@ -133,6 +136,8 @@ export const studentsService = {
   async update(ctx: AuthContext, input: UpdateStudentInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = updateStudentSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid details.");
     const d = parsed.data;
@@ -157,6 +162,8 @@ export const studentsService = {
   async createLogin(ctx: AuthContext, input: StudentLoginInput): Promise<Result<{ emailSent: boolean }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = studentLoginSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Enter a valid email.");
     try {
@@ -190,6 +197,8 @@ export const studentsService = {
   async setPhotoUrl(ctx: AuthContext, id: string, url: string): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { error } = await studentsRepository.update(ctx.schoolId, id, { photo_url: url }, ctx.userId);
     if (error) return err("INTERNAL", error.message);
     return ok(null);
@@ -198,6 +207,8 @@ export const studentsService = {
   async remove(ctx: AuthContext, id: string): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "students.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { error } = await studentsRepository.softDelete(ctx.schoolId, id, ctx.userId);
     if (error) return err("INTERNAL", error.message);
     return ok(null);

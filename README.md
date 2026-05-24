@@ -67,13 +67,29 @@ are the only layer that touches Supabase. The result engine has zero I/O.
 
 ## Status
 
-Foundational scaffold. Modules contain typed stubs (`schema/repository/service/
-actions`) ready to be filled in, following the build order in §18 of the plan.
-The `lib/result-engine` is partially implemented and unit-tested as the
-reference for the layered pattern.
+The core is implemented across the layered stack: tenancy, academics, people,
+grading, score entry (+ bulk XLSX import), the result engine + orchestrator,
+approvals workflow (atomic publish), cumulative/annual rollups, report-card PDFs,
+fee-gating, billing (Paystack), and the consumer portal. `lib/result-engine` is
+pure and covered by golden **and** property-based tests.
 
-The full database schema, RLS policies, and seed exist in `supabase/` and have
-been verified end-to-end (migrations apply, tenant isolation + score-locking +
-history triggers enforced). After `supabase db reset`, run `npm run db:types` to
-replace the placeholder `types/database.types.ts` with strict generated types —
-the repositories will then be type-checked against the real schema.
+The full database schema, RLS policies, and seed live in `supabase/` and are
+verified end-to-end: a CI job boots a real Postgres and runs the RLS
+tenant-isolation suite on every PR (`npm run test:rls`), in addition to
+typecheck · lint · unit tests · build.
+
+`types/database.types.ts` holds strict, hand-maintained types transcribed from
+the migrations, so every repository is type-checked against the real schema.
+Regenerate the canonical version whenever the schema changes — it replaces the
+file wholesale and is drop-in compatible:
+
+```bash
+npm run db:types          # supabase gen types typescript --local   (needs Docker)
+npm run db:types:linked   # against a linked cloud project
+```
+
+> Dependency note: `@supabase/ssr` 0.5.2 annotates its client with the older
+> 3-generic `SupabaseClient`, which the installed `@supabase/supabase-js` (2.106)
+> reordered. `lib/supabase/{server,client}.ts` re-annotate the return type so
+> queries stay typed; upgrading `@supabase/ssr` to a 2.106-compatible release
+> lets you drop those casts.

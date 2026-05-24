@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
@@ -12,8 +13,14 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
  * Tenant isolation is enforced by RLS using the school_id claim in the JWT, so
  * this client can never read another tenant's rows even if a query forgets to
  * filter by school_id. (Defense in depth: repositories still scope explicitly.)
+ *
+ * Return type is pinned to supabase-js's own `SupabaseClient<Database>`: the
+ * installed @supabase/ssr (0.5.2) annotates its return with the OLD 3-generic
+ * `SupabaseClient<Database, SchemaName, Schema>`, but supabase-js 2.106 reordered
+ * those generics, which collapses the schema to `never` and untypes every query.
+ * The runtime client is correct; this re-annotation restores accurate typing.
  */
-export async function createClient() {
+export async function createClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -36,5 +43,5 @@ export async function createClient() {
         },
       },
     },
-  );
+  ) as unknown as SupabaseClient<Database>;
 }

@@ -121,23 +121,24 @@ export const academicsRepository = {
       .order("name", { ascending: true });
   },
 
-  async insertClass(schoolId: string, input: CreateClassInput, userId: string) {
+  async insertClass(schoolId: string, input: CreateClassInput, _userId: string) {
     const sb = await createClient();
+    // NB: the classes table has no created_by/updated_by columns (unlike
+    // students) — writing them would be rejected by PostgREST at runtime.
     return sb.from("classes").insert({
       school_id: schoolId,
       name: input.name,
       level: input.level,
       arm: input.arm ?? null,
       grade_order: input.gradeOrder,
-      created_by: userId,
     });
   },
 
-  async softDeleteClass(schoolId: string, id: string, userId: string) {
+  async softDeleteClass(schoolId: string, id: string, _userId: string) {
     const sb = await createClient();
     return sb
       .from("classes")
-      .update({ deleted_at: new Date().toISOString(), updated_by: userId })
+      .update({ deleted_at: new Date().toISOString() })
       .eq("school_id", schoolId)
       .eq("id", id);
   },

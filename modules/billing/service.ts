@@ -75,7 +75,7 @@ export const billingService = {
       email,
       amountKobo: Math.round(plan.amount * 100),
       reference,
-      callbackUrl: `${base}/billing/callback`,
+      callbackUrl: `${base}/subscription/callback`,
       metadata: { school_id: ctx.schoolId, plan: plan.key },
     });
     if (!res.ok || !res.authorizationUrl) return err("INTERNAL", res.error ?? "Could not start checkout.");
@@ -86,32 +86,75 @@ export const billingService = {
   /**
    * Apply a successful payment to the school's subscription. Shared by the
    * webhook (authenticated by signature) and the callback page (after verify).
-   * Uses the service-role upsert. Idempotent.
+   *
+   * Idempotent and race-safe: the payment `reference` is recorded first under a
+   * UNIQUE index, so a duplicate (Paystack retry, or webhook + callback racing)
+   * is detected and skipped — applying twice would double-extend the paid period
+   * since current_period_end is computed from "now". Returns a Result so callers
+   * can fail the webhook and let Paystack retry on a genuine error.
    */
-  async applyPayment(args: { schoolId: string; planKey: string; amountKobo?: number; customerCode?: string }): Promise<void> {
+  async applyPayment(args: {
+    schoolId: string;
+    planKey: string;
+    reference: string;
+    amountKobo?: number;
+    customerCode?: string;
+  }): Promise<Result<{ applied: boolean }>> {
     const plan = planByKey(args.planKey);
-    await billingRepository.upsertViaAdmin(args.schoolId, {
+    const amount = args.amountKobo != null ? args.amountKobo / 100 : plan?.amount ?? null;
+
+    // Idempotency guard — record the reference before doing anything.
+    const rec = await billingRepository.recordPaymentEventViaAdmin({
+      schoolId: args.schoolId,
+      reference: args.reference,
+      eventType: "charge.success",
+      amount,
+    });
+    if (rec.error) {
+      if (rec.error.code === "23505") {
+        logger.info("billing.payment_duplicate_ignored", { schoolId: args.schoolId, reference: args.reference });
+        return ok({ applied: false }); // already applied — not an error
+      }
+      return err("INTERNAL", rec.error.message);
+    }
+
+    // Apply. If any write fails, undo the marker so a retry re-applies cleanly.
+    const up = await billingRepository.upsertViaAdmin(args.schoolId, {
       plan: args.planKey,
       status: "active",
       provider: "paystack",
       customer_code: args.customerCode ?? null,
-      amount: args.amountKobo != null ? args.amountKobo / 100 : plan?.amount ?? null,
+      amount,
       currency: plan?.currency ?? "NGN",
       current_period_end: periodEnd(plan?.interval ?? "annually"),
       last_payment_at: new Date().toISOString(),
     });
+    if (up.error) {
+      await billingRepository.deletePaymentEventViaAdmin(args.reference);
+      return err("INTERNAL", up.error.message);
+    }
+    // Promote the school out of trial → active (entitlement then reads the active period).
+    const act = await billingRepository.setSchoolActiveViaAdmin(args.schoolId);
+    if (act.error) {
+      await billingRepository.deletePaymentEventViaAdmin(args.reference);
+      return err("INTERNAL", act.error.message);
+    }
     await auditService.record({
       schoolId: args.schoolId,
       actorId: args.schoolId, // system/webhook actor; no user
       action: "billing.payment_succeeded",
       entityType: "subscription",
       entityId: args.schoolId,
-      metadata: { plan: args.planKey, amountKobo: args.amountKobo ?? null },
+      metadata: { plan: args.planKey, amountKobo: args.amountKobo ?? null, reference: args.reference },
     });
-    logger.info("billing.payment_applied", { schoolId: args.schoolId, plan: args.planKey });
+    logger.info("billing.payment_applied", { schoolId: args.schoolId, plan: args.planKey, reference: args.reference });
+    return ok({ applied: true });
   },
 
-  /** Handle a verified Paystack webhook event. */
+  /**
+   * Handle a verified Paystack webhook event. Returns ok:false on a genuine
+   * processing failure so the route can answer non-2xx and Paystack retries.
+   */
   async handleWebhookEvent(event: { event?: string; data?: Record<string, unknown> }): Promise<{ ok: boolean; handled: string }> {
     const type = event.event ?? "";
     const data = event.data ?? {};
@@ -120,13 +163,26 @@ export const billingService = {
     const planKey = (metadata.plan as string | undefined) ?? "standard";
 
     if (type === "charge.success" && schoolId) {
+      const reference = data.reference as string | undefined;
+      if (!reference) return { ok: false, handled: "charge.success (missing reference)" };
       const customer = (data.customer as { customer_code?: string } | undefined)?.customer_code;
-      await this.applyPayment({ schoolId, planKey, amountKobo: data.amount as number | undefined, customerCode: customer });
-      return { ok: true, handled: "charge.success" };
+      const res = await this.applyPayment({
+        schoolId,
+        planKey,
+        reference,
+        amountKobo: data.amount as number | undefined,
+        customerCode: customer,
+      });
+      if (!res.ok) return { ok: false, handled: `charge.success (${res.error.message})` };
+      return { ok: true, handled: res.data.applied ? "charge.success" : "charge.success (duplicate)" };
     }
 
     if ((type === "subscription.disable" || type === "invoice.payment_failed") && schoolId) {
-      await billingRepository.upsertViaAdmin(schoolId, { status: type === "subscription.disable" ? "canceled" : "past_due" });
+      // Idempotent on its own (sets a fixed status), but still surface DB errors.
+      const up = await billingRepository.upsertViaAdmin(schoolId, {
+        status: type === "subscription.disable" ? "canceled" : "past_due",
+      });
+      if (up.error) return { ok: false, handled: `${type} (${up.error.message})` };
       return { ok: true, handled: type };
     }
 
@@ -142,12 +198,14 @@ export const billingService = {
 
     const schoolId = (v.metadata?.school_id as string | undefined) ?? ctx.schoolId;
     if (schoolId !== ctx.schoolId) return err("FORBIDDEN", "Payment belongs to another school.");
-    await this.applyPayment({
+    const applied = await this.applyPayment({
       schoolId,
       planKey: (v.metadata?.plan as string | undefined) ?? "standard",
+      reference, // dedupes against the webhook applying the same transaction
       amountKobo: v.amountKobo,
       customerCode: v.customerCode,
     });
+    if (!applied.ok) return applied;
     return ok({ status: "success" });
   },
 };

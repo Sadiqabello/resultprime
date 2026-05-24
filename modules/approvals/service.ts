@@ -90,29 +90,21 @@ export const approvalsService = {
       if (!has) return err("CONFLICT", "Compute this class's results before submitting.");
     }
 
-    const now = new Date().toISOString();
-    const fields: Record<string, unknown> = { state: to };
-    if (to === "submitted") {
-      fields.submitted_by = ctx.userId;
-      fields.submitted_at = now;
-    } else if (to === "approved") {
-      fields.approved_by = ctx.userId;
-      fields.approved_at = now;
-    } else if (to === "published") {
-      fields.published_at = now;
-    }
+    // One atomic transaction: approval row + event log, and (on publish) the
+    // subject/term result visibility. Either all of it lands, or none of it.
+    const { error } = await approvalsRepository.applyTransition({
+      schoolId,
+      classId,
+      termId,
+      to,
+      from,
+      actorId: ctx.userId,
+      actorRole: ctx.roles[0] ?? null,
+    });
+    if (error) return err("INTERNAL", error.message ?? "Could not update approval.");
 
-    const { data: appr, error } = await approvalsRepository.upsertApproval(schoolId, classId, termId, fields);
-    if (error || !appr) return err("INTERNAL", error?.message ?? "Could not update approval.");
-
-    await approvalsRepository.insertEvent(schoolId, appr.id as string, from, to, ctx.userId, ctx.roles[0] ?? null);
-
-    // Publishing flips the underlying results to visible.
+    // Best-effort: notify students/guardians/form-teacher (never blocks publish).
     if (to === "published") {
-      const { data: csIds } = await approvalsRepository.getClassSubjectIds(schoolId, classId, termId);
-      await approvalsRepository.setResultsStatus(schoolId, (csIds ?? []).map((c) => c.id), termId, "published");
-      await approvalsRepository.setTermResultsStatus(schoolId, classId, termId, "published");
-      // Best-effort: notify students/guardians/form-teacher (never blocks publish).
       await notificationsService.notifyResultsPublished({ schoolId, classId, termId, termName: term.name as string });
     }
 

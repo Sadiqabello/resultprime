@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
+import type { Json } from "@/types/database.types";
 import {
   computeClassSubjectResults,
   aggregateTerm,
@@ -75,7 +76,7 @@ async function recomputeClass(admin: Admin, schoolId: string, classId: string, t
       results.map((r) => ({
         school_id: schoolId, enrollment_id: r.studentRef, class_subject_id: cs.id, subject_id: cs.subject_id, term_id: termId,
         ca_total: r.caTotal, exam_score: r.examScore, total: r.total, grade: r.grade, grade_point: r.gradePoint, remark: r.remark,
-        subject_position: r.subjectPosition, subject_count: results.length, is_absent: r.isAbsent, config_snapshot: cfg.configSnapshot, computed_at: now, status: "computed",
+        subject_position: r.subjectPosition, subject_count: results.length, is_absent: r.isAbsent, config_snapshot: cfg.configSnapshot as unknown as Json, computed_at: now, status: "computed" as const,
       })),
       { onConflict: "school_id,enrollment_id,class_subject_id,term_id" },
     );
@@ -90,7 +91,7 @@ async function recomputeClass(admin: Admin, schoolId: string, classId: string, t
       school_id: schoolId, enrollment_id: a.id, class_id: classId, term_id: termId,
       subjects_count: a.subjectsCount, total_obtainable: a.totalObtainable, total_obtained: a.totalObtained,
       average: a.average, class_position: positions.get(a.id) ?? null, class_size: classSize,
-      config_snapshot: cfg.configSnapshot, computed_at: now, status: "computed",
+      config_snapshot: cfg.configSnapshot as unknown as Json, computed_at: now, status: "computed" as const,
     })),
     { onConflict: "school_id,enrollment_id,term_id" },
   );

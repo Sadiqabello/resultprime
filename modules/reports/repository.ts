@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { TablesUpdate } from "@/types/database.types";
 
 /**
  * Report-card data access. Staff reads go through the user client (RLS). Public
@@ -174,7 +175,7 @@ export const reportsRepository = {
     const admin = createAdminClient();
     return admin
       .from("term_results")
-      .update(fields)
+      .update(fields as TablesUpdate<"term_results">)
       .eq("school_id", schoolId)
       .eq("enrollment_id", enrollmentId)
       .eq("term_id", termId);

@@ -92,6 +92,9 @@ export async function uploadStudentPhoto(formData: FormData): Promise<UploadResu
 
 export async function deleteStudent(formData: FormData): Promise<void> {
   const ctx = await requireAuth();
-  await studentsService.remove(ctx, String(formData.get("id")));
+  const res = await studentsService.remove(ctx, String(formData.get("id")));
+  // Throw on failure so the confirm dialog surfaces it (toast) instead of
+  // showing "Student removed" when nothing was removed.
+  if (!res.ok) throw new Error(friendlyMessage(res.error));
   revalidatePath("/students");
 }

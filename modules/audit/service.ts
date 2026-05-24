@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
+import type { Json } from "@/types/database.types";
 
 /**
  * Application-level audit logging (§13). Complements the DB triggers on `scores`
@@ -27,7 +28,7 @@ export const auditService = {
         action: args.action,
         entity_type: args.entityType ?? null,
         entity_id: args.entityId ?? null,
-        metadata: args.metadata ?? {},
+        metadata: (args.metadata ?? {}) as Json,
       });
     } catch (e) {
       logger.error("audit.write_failed", {

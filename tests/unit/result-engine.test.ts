@@ -105,4 +105,16 @@ describe("term aggregate", () => {
   it("returns null average with no graded subjects (no divide-by-zero)", () => {
     expect(aggregateTerm([], 2).average).toBeNull();
   });
+  it("computes a true percentage when subjects have different obtainable marks", () => {
+    const agg = aggregateTerm(
+      [
+        { subjectId: "a", total: 80, obtainable: 100, isExempt: false },
+        { subjectId: "b", total: 40, obtainable: 50, isExempt: false },
+      ],
+      2,
+    );
+    // 120 of 150 obtainable = 80% (a naive mean of subject scores would be 60).
+    expect(agg.totalObtainable).toBe(150);
+    expect(agg.average).toBe(80);
+  });
 });

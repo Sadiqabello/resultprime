@@ -217,6 +217,28 @@ export function renderAccountInvite(opts: {
   return { subject, text, html };
 }
 
+/** Billing reminder (trial ending / read-only grace) — links to the renew page. */
+export function renderBillingReminder(opts: {
+  schoolName: string;
+  appUrl: string;
+  heading: string;
+  lede: string;
+  note?: string;
+}): { subject: string; text: string; html: string } {
+  const url = `${opts.appUrl}/subscription`;
+  const subject = `${opts.heading} — ${opts.schoolName}`;
+  const text = `${opts.lede}\n\nRenew or manage your subscription:\n${url}\n\n— Result Prime`;
+  const html = emailLayout({
+    appUrl: opts.appUrl,
+    preheader: opts.lede,
+    heading: opts.heading,
+    lede: opts.lede,
+    cta: { label: "Manage subscription", url, color: BRAND.crimson },
+    note: opts.note,
+  });
+  return { subject, text, html };
+}
+
 /** Render a stored notification into branded, channel-ready content. */
 export function renderNotification(
   type: string,

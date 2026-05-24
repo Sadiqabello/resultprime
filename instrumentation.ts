@@ -11,3 +11,25 @@ export async function register() {
     (globalThis as unknown as { WebSocket: unknown }).WebSocket = WebSocket;
   }
 }
+
+/**
+ * Server-side error sink (Next 15). Fires for uncaught errors in Server
+ * Components, Route Handlers, and Server Actions — the catch-all our typed
+ * `Result` flow doesn't cover. Routes everything through one swappable sink
+ * (lib/logger#captureException) so an error tracker can be wired in one place.
+ */
+export async function onRequestError(
+  error: unknown,
+  request: { path?: string; method?: string },
+  context: { routerKind?: string; routePath?: string; renderSource?: string },
+) {
+  const { captureException } = await import("@/lib/logger");
+  captureException(error, {
+    action: "request_error",
+    path: request?.path,
+    method: request?.method,
+    routerKind: context?.routerKind,
+    routePath: context?.routePath,
+    renderSource: context?.renderSource,
+  });
+}

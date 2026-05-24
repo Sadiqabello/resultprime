@@ -25,7 +25,7 @@ const clientIp = (request: NextRequest) =>
 // so they bypass the session gate (their handlers do their own auth).
 // `/auth/confirm` must be public: it runs verifyOtp to ESTABLISH the session
 // from an email link, so the visitor is unauthenticated until it completes.
-const PUBLIC_PATHS = ["/", "/login", "/signup", "/verify", "/auth/confirm", "/api/health", "/api/webhooks", "/api/cron"];
+const PUBLIC_PATHS = ["/", "/login", "/signup", "/verify", "/privacy", "/terms", "/auth/confirm", "/api/health", "/api/webhooks", "/api/cron"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/types/database.types";
 
 /**
  * Data access for bulk promotion. Reads cumulative_results (the decisions) and
@@ -94,7 +95,7 @@ export const promotionRepository = {
   async insertEnrollments(rows: Record<string, unknown>[]) {
     const sb = await createClient();
     if (rows.length === 0) return { error: null };
-    return sb.from("enrollments").insert(rows);
+    return sb.from("enrollments").insert(rows as TablesInsert<"enrollments">[]);
   },
 
   async updateEnrollmentClass(schoolId: string, id: string, classId: string) {

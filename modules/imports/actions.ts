@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
 import { friendlyMessage } from "@/lib/errors";
+import { rateLimit } from "@/lib/ratelimit";
 import { importsService, type ScoreImportPreview, type ScoreImportResult } from "./service";
 import { importContextSchema } from "./schema";
 
@@ -32,6 +33,9 @@ function readUpload(formData: FormData): { classSubjectId: string; file: File } 
 /** Parse + validate an uploaded sheet and return the diff preview. No write. */
 export async function previewScoreImport(formData: FormData): Promise<PreviewResult> {
   const ctx = await requireAuth();
+  // Parsing a multi-MB workbook is non-trivial work; cap per-user bursts.
+  const rl = await rateLimit(`import:${ctx.userId}`, { max: 15, windowMs: 60_000 });
+  if (!rl.ok) return { ok: false, error: "Too many imports. Please wait a moment and try again." };
   const upload = readUpload(formData);
   if ("error" in upload) return { ok: false, error: upload.error };
 
@@ -44,6 +48,8 @@ export async function previewScoreImport(formData: FormData): Promise<PreviewRes
 /** Re-validate and commit the previewed import in one bulk upsert. */
 export async function commitScoreImport(formData: FormData): Promise<CommitResult> {
   const ctx = await requireAuth();
+  const rl = await rateLimit(`import:${ctx.userId}`, { max: 15, windowMs: 60_000 });
+  if (!rl.ok) return { ok: false, error: "Too many imports. Please wait a moment and try again." };
   const upload = readUpload(formData);
   if ("error" in upload) return { ok: false, error: upload.error };
 

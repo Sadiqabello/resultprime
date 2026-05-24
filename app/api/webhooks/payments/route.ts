@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await billingService.handleWebhookEvent(event);
+    // Answer non-2xx on a genuine processing failure so Paystack retries the
+    // delivery. A duplicate (already-applied) event returns ok:true — no retry.
+    if (!result.ok) {
+      logger.error("billing.webhook_unprocessed", { event: event.event, handled: result.handled });
+      return new NextResponse("Processing error", { status: 500 });
+    }
     return NextResponse.json({ received: true, ...result });
   } catch (e) {
     logger.error("billing.webhook_failed", { event: event.event, error: (e as Error).message });

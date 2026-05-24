@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Enums } from "@/types/database.types";
 
 /**
  * Platform (cross-tenant) data access. Uses the SERVICE-ROLE client, which
@@ -38,7 +39,7 @@ export const platformRepository = {
 
   setStatus(id: string, status: string) {
     const a = createAdminClient();
-    return a.from("schools").update({ status }).eq("id", id);
+    return a.from("schools").update({ status: status as Enums<"school_status"> }).eq("id", id);
   },
 
   getSystemRoleId(key: string) {

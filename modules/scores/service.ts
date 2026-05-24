@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { gradingService } from "@/modules/grading/service";
 import { saveScoresSchema, type SaveScoresInput } from "./schema";
@@ -75,7 +76,7 @@ export const scoresService = {
         classSubjectId: r.id as string,
         classLabel: classMap.get(r.class_id) ?? "—",
         subjectName: subjectMap.get(r.subject_id) ?? "—",
-        teacherName: canEnterAny ? teacherMap.get(r.teacher_id) ?? null : null,
+        teacherName: canEnterAny ? teacherMap.get(r.teacher_id ?? "") ?? null : null,
       }))
       .sort((a, b) => a.classLabel.localeCompare(b.classLabel) || a.subjectName.localeCompare(b.subjectName));
 
@@ -159,6 +160,8 @@ export const scoresService = {
   async save(ctx: AuthContext, input: SaveScoresInput): Promise<Result<{ saved: number }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "scores.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = ctx.schoolId;
 
     const parsed = saveScoresSchema.safeParse(input);

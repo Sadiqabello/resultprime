@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { validateGradeBands, type EngineConfig } from "@/lib/result-engine";
 import { gradingConfigSchema, type GradingConfigInput } from "./schema";
@@ -93,6 +94,8 @@ export const gradingService = {
   async saveConfig(ctx: AuthContext, input: GradingConfigInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "grading.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
 
     const parsed = gradingConfigSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid grading config.");

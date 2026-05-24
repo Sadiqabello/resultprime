@@ -113,7 +113,7 @@ export const portalService = {
         classTeacher: (tr.class_teacher_remark as string | null) ?? null,
         principal: (tr.principal_remark as string | null) ?? null,
       },
-      traits: Array.isArray(tr.traits) ? (tr.traits as ReportCardView["traits"]) : [],
+      traits: Array.isArray(tr.traits) ? (tr.traits as unknown as ReportCardView["traits"]) : [],
       signatureUrl: (bits.settings?.principal_signature_url as string | null) ?? null,
       subjects,
     };

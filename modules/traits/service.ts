@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { saveTraitsSchema, type SaveTraitsInput, type TraitCategory } from "./schema";
 import { traitsRepository } from "./repository";
@@ -29,6 +30,8 @@ export const traitsService = {
   async save(ctx: AuthContext, input: SaveTraitsInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "academics.manage")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = saveTraitsSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid traits.");
     // Reject duplicate names (case-insensitive) to match the unique index.

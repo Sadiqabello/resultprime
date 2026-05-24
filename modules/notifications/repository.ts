@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/types/database.types";
 
 /**
  * Notification data access. Inserts are RLS-gated to school staff
@@ -65,7 +66,9 @@ export const notificationsRepository = {
 
   async insertMany(rows: Record<string, unknown>[]) {
     const sb = await createClient();
-    return sb.from("notifications").insert(rows);
+    // Rows are built dynamically by the service from validated inputs; assert the
+    // shape at this single DB boundary so callers keep their flexible payloads.
+    return sb.from("notifications").insert(rows as TablesInsert<"notifications">[]);
   },
 
   async listForUser(userId: string, limit = 50) {

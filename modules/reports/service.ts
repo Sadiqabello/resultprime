@@ -1,5 +1,6 @@
 import "server-only";
 import { can, hasRole, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
@@ -169,7 +170,7 @@ export const reportsService = {
         classTeacher: (tr?.class_teacher_remark as string | null) ?? null,
         principal: (tr?.principal_remark as string | null) ?? null,
       },
-      traits: Array.isArray(tr?.traits) ? (tr!.traits as TraitRating[]) : [],
+      traits: Array.isArray(tr?.traits) ? (tr!.traits as unknown as TraitRating[]) : [],
       signatureUrl: (settings?.principal_signature_url as string | null) ?? null,
       subjects,
     });
@@ -231,7 +232,7 @@ export const reportsService = {
           attendancePresent: (x?.attendance_present as number | null) ?? null,
           attendanceTotal: (x?.attendance_total as number | null) ?? null,
           traitRatings: Object.fromEntries(
-            (Array.isArray(x?.traits) ? (x!.traits as TraitRating[]) : []).map((t) => [t.name, t.rating]),
+            (Array.isArray(x?.traits) ? (x!.traits as unknown as TraitRating[]) : []).map((t) => [t.name, t.rating]),
           ),
           average: (x?.average as number | null) ?? null,
           position: (x?.class_position as number | null) ?? null,
@@ -247,6 +248,8 @@ export const reportsService = {
   async saveClassExtras(ctx: AuthContext, input: SaveExtrasInput): Promise<Result<{ saved: number }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "class.remarks.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const schoolId = ctx.schoolId;
 
     const parsed = saveExtrasSchema.safeParse(input);

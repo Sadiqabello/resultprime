@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/types/database.types";
 import type { AddStaffInput } from "./schema";
 
 /** Staff data access. Role display joins through user_roles → roles in a second query. */
@@ -71,7 +72,7 @@ export const staffRepository = {
 
   async update(schoolId: string, id: string, fields: Record<string, unknown>) {
     const sb = await createClient();
-    return sb.from("staff").update(fields).eq("school_id", schoolId).eq("id", id);
+    return sb.from("staff").update(fields as TablesUpdate<"staff">).eq("school_id", schoolId).eq("id", id);
   },
 
   async softDelete(schoolId: string, id: string) {

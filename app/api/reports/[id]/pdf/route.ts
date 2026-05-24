@@ -4,6 +4,7 @@ import { getAuthContext } from "@/modules/auth/service";
 import { reportsService } from "@/modules/reports/service";
 import { renderHtmlToPdf } from "@/lib/pdf";
 import { can } from "@/lib/authz";
+import { rateLimit } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
 /**
@@ -29,6 +30,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const ctx = await getAuthContext();
   if (!ctx) return new NextResponse("Unauthorized", { status: 401 });
   if (!can(ctx, "results.read")) return new NextResponse("Forbidden", { status: 403 });
+
+  // Each PDF spins up headless Chromium — cap per-user bursts to protect memory.
+  const rl = await rateLimit(`pdf:report:${ctx.userId}`, { max: 20, windowMs: 60_000 });
+  if (!rl.ok) {
+    return new NextResponse("Too many requests. Please wait a moment.", {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
+  }
 
   // Authorize against the tenant + get name/term for the filename.
   const res = await reportsService.getReportCard(ctx, id);

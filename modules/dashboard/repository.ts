@@ -35,8 +35,22 @@ export async function getDashboardRaw(
   userId: string,
 ): Promise<DashboardRaw> {
   const sb = await createClient();
-  const head = (table: string) =>
-    sb.from(table).select("*", { count: "exact", head: true }).eq("school_id", schoolId);
+  // Generic over the (school-scoped) table name so each call site keeps a
+  // concrete row type and its follow-on .eq("term_id"/"status"/...) stay typed.
+  const head = <
+    T extends
+      | "students"
+      | "classes"
+      | "subjects"
+      | "staff"
+      | "grading_systems"
+      | "term_results"
+      | "enrollments"
+      | "approvals"
+      | "class_subjects",
+  >(
+    table: T,
+  ) => sb.from(table).select("*", { count: "exact", head: true });
 
   // Header + current academic context.
   const [school, user, session, term] = await Promise.all([
@@ -62,11 +76,11 @@ export async function getDashboardRaw(
 
   // Tenant-wide counts.
   const [students, classes, subjects, staff, grading] = await Promise.all([
-    head("students").is("deleted_at", null),
-    head("classes").is("deleted_at", null),
-    head("subjects").is("deleted_at", null),
-    head("staff").is("deleted_at", null),
-    head("grading_systems").is("deleted_at", null),
+    head("students").eq("school_id", schoolId).is("deleted_at", null),
+    head("classes").eq("school_id", schoolId).is("deleted_at", null),
+    head("subjects").eq("school_id", schoolId).is("deleted_at", null),
+    head("staff").eq("school_id", schoolId).is("deleted_at", null),
+    head("grading_systems").eq("school_id", schoolId).is("deleted_at", null),
   ]);
 
   // Term-scoped counts (only meaningful once a current term exists).
@@ -76,10 +90,11 @@ export async function getDashboardRaw(
   let myClassSubjects = 0;
   if (termId) {
     const [pub, enr, pend, mine] = await Promise.all([
-      head("term_results").eq("term_id", termId).eq("status", "published"),
-      head("enrollments").eq("term_id", termId).is("deleted_at", null),
-      head("approvals").eq("term_id", termId).in("state", ["submitted", "l1_approved"]),
+      head("term_results").eq("school_id", schoolId).eq("term_id", termId).eq("status", "published"),
+      head("enrollments").eq("school_id", schoolId).eq("term_id", termId).is("deleted_at", null),
+      head("approvals").eq("school_id", schoolId).eq("term_id", termId).in("state", ["submitted", "l1_approved"]),
       head("class_subjects")
+        .eq("school_id", schoolId)
         .eq("term_id", termId)
         .eq("teacher_id", userId)
         .is("deleted_at", null),

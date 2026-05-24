@@ -1,5 +1,6 @@
 import "server-only";
 import { can, type AuthContext, type Role } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { authRepository } from "@/modules/auth/repository";
@@ -65,6 +66,8 @@ export const staffService = {
   async add(ctx: AuthContext, input: AddStaffInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "staff.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
 
     const parsed = addStaffSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid staff details.");
@@ -138,6 +141,8 @@ export const staffService = {
   async update(ctx: AuthContext, input: UpdateStaffInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "staff.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const parsed = updateStaffSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid details.");
     const d = parsed.data;
@@ -154,6 +159,8 @@ export const staffService = {
   async remove(ctx: AuthContext, id: string): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "staff.write")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
     const { error } = await staffRepository.softDelete(ctx.schoolId, id);
     if (error) return err("INTERNAL", error.message);
     return ok(null);

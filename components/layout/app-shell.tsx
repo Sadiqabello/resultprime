@@ -12,16 +12,20 @@ import { Sidebar } from "./sidebar";
 export function AppShell({
   ctx,
   unread = 0,
+  banner,
   children,
 }: {
   ctx: AuthContext;
   unread?: number;
+  /** Optional notice rendered above the content (e.g. the read-only grace banner). */
+  banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar ctx={ctx} unread={unread} />
       <div className="flex flex-1 flex-col">
+        {banner}
         <header className="flex h-14 items-center justify-between border-b px-6">
           <Link href="/dashboard" aria-label="Result Prime">
             <Logo markClassName="h-7 w-auto" wordmarkClassName="text-base" />

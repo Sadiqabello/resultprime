@@ -5,9 +5,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * RLS TENANT-ISOLATION SUITE (§20.2 — "non-negotiable").
  *
  * Proves the database itself refuses cross-tenant reads: a user of School A,
- * querying through the anon key + their own JWT (exactly как the browser does),
+ * querying through the anon key + their own JWT,
  * can never see School B's rows — even with a query that omits the filter on
- * school_id. This is the backstop the whole multi-tenant model rests on.
+ * school_id (exactly as the browser does). This is the backstop the whole
+ * multi-tenant model rests on.
  *
  * Not part of `npm test` (the unit `include` excludes tests/integration). Run it
  * against a REAL Postgres with the schema applied (Supabase local preferred):

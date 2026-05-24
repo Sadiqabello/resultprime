@@ -5,7 +5,7 @@
 > remains is mostly **configuration, deployment, and operational rigor** — plus a
 > short list of polish items and explicitly-deferred future features.
 
-_Last updated: 2026-05-22_
+_Last updated: 2026-05-24_
 
 ---
 
@@ -25,6 +25,24 @@ Built **and runtime-verified** across the codebase:
 - **Edit student/staff** · **Storage uploads** · **Whole-school recompute cron** · **Rate limiting** · **CSP/HSTS**
 
 Everything below is **not yet done**.
+
+### Recent hardening (2026-05-24)
+
+Migrations `14`–`17` + app changes from a full-codebase review:
+
+- **RLS**: added the missing `school_id = current_school_id()` tenant predicate to
+  the consumer self-read policies on `results` / `term_results` / `cumulative_results`.
+- **Atomic publish**: `apply_approval_transition()` RPC does the approval row +
+  event log + result-visibility flips in one transaction (no half-applied state).
+- **Payments**: webhook is now idempotent (dedupes on the Paystack reference via a
+  new `payment_events` table) and returns non-2xx on real failures so Paystack retries.
+- **Integrity**: `cumulative_results` natural key is a full unique index (race-free
+  upsert); `assessment_components.max_score > 0` check; `fee_status.term_id` kept
+  consistent with the enrollment via trigger.
+- **Engine**: term average is now a true percentage of obtainable marks.
+- **Misc**: swallowed-error server actions now surface failures; constant-time cron
+  auth; rate-limited PDF/compute/import; XLSX formula-injection guard; strict DB
+  types; `onRequestError` error sink; batched class compute.
 
 ---
 
@@ -103,8 +121,12 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
 - [ ] Optional: preview deploys on PR (Vercel GitHub app, once hosting is chosen)
 
 ### B2. Test suites
-- [ ] **RLS isolation tests** exist (`tests/integration/rls-isolation.test.ts`) but aren't
-      run in CI — wire them against Supabase local (`RLS_TEST=1`)
+- [x] **RLS isolation tests** run in CI: a dedicated `rls` job boots Supabase
+      (`supabase start`), applies migrations + seed, and runs the suite with
+      `RLS_TEST=1` (`npm run test:rls`, `vitest.integration.config.ts`).
+- [x] **Property-based engine tests** (`tests/unit/result-engine.properties.test.ts`,
+      fast-check): ranking order/no-gaps, grade-band coverage, rounding, term-average
+      invariants — run in the normal unit suite.
 - [ ] **e2e** (`tests/e2e/` is empty) — add Playwright specs for the critical journeys.
       The throwaway verification scripts written during development are a good basis:
       onboard → scores → compute → approve → publish → portal; bulk import; fee-gating.
@@ -120,16 +142,25 @@ Both endpoints are built and `CRON_SECRET`-protected — they just need a schedu
         (currently pinned `^131.0.0`); bump together when you upgrade puppeteer.
 - [ ] Still TODO: move whole-class **batch** PDFs to a background job + Storage
       signed URL for large classes (single + small batches render in-request fine).
+      Interim guard in place: the PDF routes are now **rate-limited per user**
+      (`pdf:report` 20/min, `pdf:class` 6/min) so concurrent exports can't exhaust
+      memory; `compute` and `import` actions are rate-limited too.
 
 ### B4. Strict DB types
-- [ ] `types/database.types.ts` is a permissive `any` placeholder. After migrations
-      are applied to a real DB, run `npm run db:types` to generate strict types —
-      this will type-check every repository against the real schema and surface any
-      column drift before launch.
+- [x] `types/database.types.ts` now holds strict, hand-maintained types
+      transcribed from `supabase/migrations/*` — every repository is type-checked
+      against the real schema (it already surfaced a real bug: writing
+      non-existent `created_by`/`updated_by` to `classes`). Regenerate the
+      canonical version with `npm run db:types` when the schema changes (drop-in
+      compatible). The `rls` CI job runs against a real Postgres so schema drift
+      surfaces there too.
 
-### B5. Monitoring & observability  *(mostly not wired)*
-- [ ] **Sentry** (app + edge) for errors; **PostHog** (privacy-aware) for onboarding
-      funnels — needs the SDK packages + DSN/project keys (provider accounts)
+### B5. Monitoring & observability  *(error sink wired; tracker SDK pending)*
+- [x] **Error sink wired**: Next's `onRequestError` (instrumentation.ts) funnels
+      uncaught server errors through `lib/logger#captureException`, the single
+      swappable place to forward to a tracker.
+- [ ] **Sentry** (app + edge): add the SDK + `SENTRY_DSN` and forward from
+      `captureException`. **PostHog** (privacy-aware) for onboarding funnels.
 - [ ] Ship structured logs (`lib/logger`) to a platform (Logflare/Axiom/Datadog)
 - [x] Uptime ping endpoint exists: `GET /api/health` (cheap, unauthenticated,
       whitelisted in middleware). Just point your uptime monitor at it.
@@ -196,7 +227,7 @@ business needs them:
 
 ## Suggested sequence
 
-1. **B4** (generate strict types) → catches schema drift early, cheap.
+1. ~~**B4** (strict types)~~ ✅ done. ~~**B2** RLS-in-CI~~ ✅ done.
 2. **A2 + A3 + B3** (prod DB, deploy, PDF-on-serverless) → app runs in prod.
 3. **A1 + A4 + A5** (keys, subdomains, cron) → fully functional for a pilot school.
 4. **C1** (invite emails) → parents/students can self-serve sign-in.

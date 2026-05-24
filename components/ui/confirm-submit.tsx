@@ -70,8 +70,11 @@ export function ConfirmSubmit({
         await action(fd);
         toast.success(successMessage);
         setOpen(false);
-      } catch {
-        toast.error("Something went wrong. Please try again.");
+      } catch (e) {
+        // Surface the action's message when it survived (dev / known errors);
+        // Next redacts server-action error messages in production, so fall back.
+        const msg = e instanceof Error && e.message ? e.message : "";
+        toast.error(msg && !msg.includes("digest") ? msg : "Something went wrong. Please try again.");
       }
     });
   }

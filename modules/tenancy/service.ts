@@ -1,6 +1,8 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
+import { requireWritableTenant } from "@/modules/billing/access";
 import { err, ok, type Result } from "@/lib/errors";
+import { computeEntitlement, type Entitlement } from "@/lib/entitlement";
 import { schoolSettingsSchema, type SchoolSettingsInput } from "./schema";
 import { tenancyRepository } from "./repository";
 
@@ -8,8 +10,10 @@ export interface CurrentSchool {
   name: string;
   slug: string;
   status: string;
-  /** Active access? false when suspended/cancelled. */
+  /** Active access? false when suspended/cancelled (kept for back-compat). */
   accessible: boolean;
+  /** Live billing entitlement (trial/subscription + grace). */
+  entitlement: Entitlement;
 }
 
 export interface PublicBranding {
@@ -83,6 +87,8 @@ export const tenancyService = {
   async saveBranding(ctx: AuthContext, input: SchoolSettingsInput): Promise<Result<null>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "school.configure")) return err("FORBIDDEN", "Not allowed.");
+    const _w = await requireWritableTenant(ctx);
+    if (!_w.ok) return _w;
 
     const parsed = schoolSettingsSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid settings.");
@@ -117,11 +123,21 @@ export const tenancyService = {
     if (error) return err("INTERNAL", error.message);
     if (!data) return ok(null);
     const status = data.status as string;
+    // PostgREST embeds the (one) subscription as an array.
+    const subRow = Array.isArray(data.subscriptions) ? data.subscriptions[0] : data.subscriptions;
+    const entitlement = computeEntitlement({
+      status,
+      trialEndsAt: (data.trial_ends_at as string | null) ?? null,
+      subscription: subRow
+        ? { status: (subRow.status as string | null) ?? null, currentPeriodEnd: (subRow.current_period_end as string | null) ?? null }
+        : null,
+    });
     return ok({
       name: data.name as string,
       slug: (data.slug as string) ?? "",
       status,
-      accessible: status !== "suspended" && status !== "cancelled",
+      accessible: entitlement.access !== "locked",
+      entitlement,
     });
   },
 };

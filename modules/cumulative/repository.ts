@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database.types";
 
 export interface CumulativeRow {
   studentId: string;
@@ -88,28 +89,17 @@ export const cumulativeRepository = {
   },
 
   /**
-   * Replace a class's annual rows for the session, idempotently. We delete the
-   * affected students' existing session rows then insert fresh, rather than
-   * ON CONFLICT — the natural-key index is partial (`where deleted_at is null`),
-   * which PostgREST can't use as a conflict target, and an annual result is a
-   * recomputable aggregate so wipe-and-reinsert is the cleanest recompute.
+   * Recompute a class's annual rows for the session, idempotently. Upserts on the
+   * natural key (school_id, student_id, session_id) — now a FULL unique index
+   * (migration 15), so a single atomic upsert replaces the former delete+insert
+   * (which had a brief window where a concurrent read could see no rows).
    */
   async upsertCumulative(schoolId: string, rows: CumulativeRow[], configSnapshot: unknown) {
     const sb = await createClient();
     if (rows.length === 0) return { error: null };
     const now = new Date().toISOString();
-    const sessionId = rows[0]!.sessionId;
-    const studentIds = rows.map((r) => r.studentId);
 
-    const del = await sb
-      .from("cumulative_results")
-      .delete()
-      .eq("school_id", schoolId)
-      .eq("session_id", sessionId)
-      .in("student_id", studentIds);
-    if (del.error) return del;
-
-    return sb.from("cumulative_results").insert(
+    return sb.from("cumulative_results").upsert(
       rows.map((r) => ({
         school_id: schoolId,
         student_id: r.studentId,
@@ -119,12 +109,13 @@ export const cumulativeRepository = {
         cumulative_average: r.cumulativeAverage,
         annual_position: r.annualPosition,
         class_size: r.classSize,
-        promotion_status: r.promotionStatus,
+        promotion_status: r.promotionStatus as "promoted" | "repeat" | "pending" | "na",
         next_class_id: r.nextClassId,
-        config_snapshot: configSnapshot,
+        config_snapshot: configSnapshot as Json,
         computed_at: now,
-        status: "computed",
+        status: "computed" as const,
       })),
+      { onConflict: "school_id,student_id,session_id" },
     );
   },
 

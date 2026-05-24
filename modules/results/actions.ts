@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/modules/auth/service";
 import { friendlyMessage } from "@/lib/errors";
+import { rateLimit } from "@/lib/ratelimit";
 import { resultsService } from "./service";
 
 export type ComputeResult =
@@ -15,6 +16,9 @@ export type ComputeResult =
  */
 export async function computeClass(classId: string): Promise<ComputeResult> {
   const ctx = await requireAuth();
+  // Compute is CPU + DB heavy; cap per-user bursts so it can't be hammered.
+  const rl = await rateLimit(`compute:${ctx.userId}`, { max: 20, windowMs: 60_000 });
+  if (!rl.ok) return { ok: false, error: "Too many compute requests. Please wait a moment and try again." };
   const res = await resultsService.computeClass(ctx, classId);
   if (!res.ok) return { ok: false, error: friendlyMessage(res.error) };
   revalidatePath("/results");

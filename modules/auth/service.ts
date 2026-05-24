@@ -66,7 +66,7 @@ export async function registerSchoolAndAdmin(
     const slug = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
     const { data, error } = await admin
       .from("schools")
-      .insert({ name: input.schoolName, slug, status: "trial" })
+      .insert({ name: input.schoolName, slug, status: "trial", trial_ends_at: new Date(Date.now() + 14 * 86_400_000).toISOString() })
       .select("id")
       .single();
     if (data) schoolId = data.id as string;

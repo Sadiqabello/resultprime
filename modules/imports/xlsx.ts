@@ -37,6 +37,17 @@ export function componentHeader(c: TemplateComponent): string {
   return `${c.label} (max ${c.maxScore})`;
 }
 
+/**
+ * Neutralise spreadsheet formula injection (CSV/XLSX). A cell whose text starts
+ * with = + - @ (or a leading tab/CR) is treated as a formula by Excel/Sheets, so
+ * a crafted student name like `=cmd|...` could execute on open. Prefix such
+ * values with an apostrophe to force text. Applied to roster cells we echo into
+ * the generated template.
+ */
+function safeCell(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
+
 /** Normalize a header cell so small formatting differences still match. */
 function normalize(value: unknown): string {
   return String(value ?? "")
@@ -56,8 +67,8 @@ export function buildScoreTemplate(input: BuildTemplateInput): Buffer {
     ...input.components.map(componentHeader),
   ];
   const body = input.students.map((s) => [
-    s.admissionNo,
-    s.name,
+    safeCell(s.admissionNo),
+    safeCell(s.name),
     ...input.components.map(() => ""),
   ]);
 
