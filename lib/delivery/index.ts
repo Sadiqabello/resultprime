@@ -103,12 +103,12 @@ export function getWhatsAppTransport(): Transport<WhatsAppMessage> {
    shares emailLayout() so the header, footer and branding stay consistent.
    ─────────────────────────────────────────────────────────────────────────── */
 const BRAND = {
-  navy: "#03045E",
-  crimson: "#D62F3A",
-  body: "#3F4458",
-  muted: "#9AA0AD",
-  canvas: "#EEF0F4",
-  border: "#E6E8EE",
+  navy: "#283618", // Black Forest — dark header band & headings
+  crimson: "#bc6c25", // Copper — accent / "verified"
+  body: "#4a4f3a", // muted olive ink
+  muted: "#9a9c84",
+  canvas: "#f3edd2", // warm cream page background
+  border: "#e9e3c6",
 };
 
 const esc = (s: string) =>
@@ -145,7 +145,7 @@ function emailLayout(o: {
   const year = new Date().getFullYear();
   const cta = o.cta ? ctaButton(o.cta.label, o.cta.url, o.cta.color ?? BRAND.navy) : "";
   const link = o.cta
-    ? `<p style="margin:6px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">If the button doesn&rsquo;t work, paste this link into your browser:<br><a href="${o.cta.url}" style="color:#0077B6;word-break:break-all;">${o.cta.url}</a></p>`
+    ? `<p style="margin:6px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">If the button doesn&rsquo;t work, paste this link into your browser:<br><a href="${o.cta.url}" style="color:#606c38;word-break:break-all;">${o.cta.url}</a></p>`
     : "";
   const note = o.note
     ? `<p style="margin:20px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.55;color:#6B7280;">${esc(o.note)}</p>`
@@ -183,7 +183,7 @@ function emailLayout(o: {
 function verifiedPill(): string {
   return (
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;"><tr>` +
-    `<td style="background:#FCE9EA;border-radius:999px;padding:7px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;color:${BRAND.crimson};">&#10003;&nbsp; Every report card is QR-verified</td>` +
+    `<td style="background:#F6E9D6;border-radius:999px;padding:7px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;color:${BRAND.crimson};">&#10003;&nbsp; Every report card is QR-verified</td>` +
     `</tr></table>`
   );
 }

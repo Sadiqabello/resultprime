@@ -97,7 +97,7 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
             <input
               id="b-primary"
               type="color"
-              value={/^#[0-9a-f]{6}$/i.test(v.primaryColor) ? v.primaryColor : "#0077b6"}
+              value={/^#[0-9a-f]{6}$/i.test(v.primaryColor) ? v.primaryColor : "#606c38"}
               onChange={(e) => set("primaryColor", e.target.value)}
               className="h-9 w-12 cursor-pointer rounded border"
             />
@@ -111,7 +111,7 @@ export function BrandingForm({ initial }: { initial: BrandingView }) {
             <input
               id="b-secondary"
               type="color"
-              value={/^#[0-9a-f]{6}$/i.test(v.secondaryColor) ? v.secondaryColor : "#023e8a"}
+              value={/^#[0-9a-f]{6}$/i.test(v.secondaryColor) ? v.secondaryColor : "#283618"}
               onChange={(e) => set("secondaryColor", e.target.value)}
               className="h-9 w-12 cursor-pointer rounded border"
             />

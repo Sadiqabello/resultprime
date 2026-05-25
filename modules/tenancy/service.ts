@@ -76,8 +76,8 @@ export const tenancyService = {
       schoolName: (school?.name as string) ?? "",
       logoUrl: (settings?.logo_url as string | null) ?? "",
       principalSignatureUrl: (settings?.principal_signature_url as string | null) ?? "",
-      primaryColor: (settings?.primary_color as string | null) ?? "#0077b6",
-      secondaryColor: (settings?.secondary_color as string | null) ?? "#023e8a",
+      primaryColor: (settings?.primary_color as string | null) ?? "#606c38",
+      secondaryColor: (settings?.secondary_color as string | null) ?? "#283618",
       approvalPolicy: (settings?.approval_policy as "one_step" | "two_step" | null) ?? "one_step",
       feeGatingEnabled: Boolean(settings?.fee_gating_enabled),
     });

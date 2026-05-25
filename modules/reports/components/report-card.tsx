@@ -7,7 +7,7 @@ import { ordinal } from "@/lib/utils";
  * it is (§11.6, §11.7). `qrSvg` is server-generated SVG markup.
  */
 export function ReportCard({ view, qrSvg, verifyUrl }: { view: ReportCardView; qrSvg: string | null; verifyUrl: string | null }) {
-  const accent = view.school.primaryColor || "#0077b6";
+  const accent = view.school.primaryColor || "#606c38";
   const initials = view.school.name.slice(0, 2).toUpperCase();
 
   return (

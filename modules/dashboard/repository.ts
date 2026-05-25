@@ -121,3 +121,96 @@ export async function getDashboardRaw(
     termCounts: { publishedResults, enrolled, pendingApprovals, myClassSubjects },
   };
 }
+
+// ── Analytics ────────────────────────────────────────────────────────────────
+// Richer reads for the admin analytics dashboard. Everything here is RLS-scoped
+// and bounded by enrolment (one row per student per term — not students×subjects),
+// so the whole dashboard is a handful of cheap aggregate queries. Per-SUBJECT
+// analytics (students×subjects) is deliberately left out to keep it fast; add it
+// behind an RPC/materialised view when needed (§15).
+
+export interface AnalyticsRaw {
+  termResults: { enrollment_id: string; class_id: string; average: number | null; status: string }[];
+  enrollments: { id: string; student_id: string; class_id: string }[];
+  students: { id: string; first_name: string; last_name: string; gender: string | null }[];
+  classes: { id: string; name: string; arm: string | null }[];
+  approvals: { subject_id: string; state: string }[];
+  feeGatingEnabled: boolean;
+  fees: { status: string }[];
+  passMark: number;
+  activity: { action: string; entity_type: string | null; created_at: string; actor_id: string | null }[];
+  actorNames: Record<string, string>;
+}
+
+export async function getAnalyticsRaw(schoolId: string, termId: string): Promise<AnalyticsRaw> {
+  const sb = await createClient();
+  const empty = ["00000000-0000-0000-0000-000000000000"];
+
+  const [termResultsRes, enrollmentsRes, studentsRes, classesRes, approvalsRes, settingsRes, feesRes, gradingRes, activityRes] =
+    await Promise.all([
+      sb
+        .from("term_results")
+        .select("enrollment_id, class_id, average, status")
+        .eq("school_id", schoolId)
+        .eq("term_id", termId)
+        .is("deleted_at", null),
+      sb
+        .from("enrollments")
+        .select("id, student_id, class_id")
+        .eq("school_id", schoolId)
+        .eq("term_id", termId)
+        .eq("status", "active")
+        .is("deleted_at", null),
+      sb
+        .from("students")
+        .select("id, first_name, last_name, gender")
+        .eq("school_id", schoolId)
+        .eq("status", "active")
+        .is("deleted_at", null),
+      sb.from("classes").select("id, name, arm").eq("school_id", schoolId).is("deleted_at", null),
+      sb
+        .from("approvals")
+        .select("subject_id, state")
+        .eq("school_id", schoolId)
+        .eq("term_id", termId)
+        .eq("subject_type", "class"),
+      sb.from("school_settings").select("fee_gating_enabled").eq("school_id", schoolId).maybeSingle(),
+      sb.from("fee_status").select("status").eq("school_id", schoolId).eq("term_id", termId),
+      sb
+        .from("grading_systems")
+        .select("pass_mark")
+        .eq("school_id", schoolId)
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      sb
+        .from("audit_logs")
+        .select("action, entity_type, created_at, actor_id")
+        .eq("school_id", schoolId)
+        .order("created_at", { ascending: false })
+        .limit(8),
+    ]);
+
+  const activity = activityRes.data ?? [];
+  const actorIds = [...new Set(activity.map((a) => a.actor_id).filter((x): x is string => Boolean(x)))];
+  const actorNames: Record<string, string> = {};
+  if (actorIds.length) {
+    const { data: users } = await sb.from("users").select("id, full_name").in("id", actorIds.length ? actorIds : empty);
+    for (const u of users ?? []) actorNames[u.id] = (u.full_name as string) || "Someone";
+  }
+
+  return {
+    termResults: termResultsRes.data ?? [],
+    enrollments: enrollmentsRes.data ?? [],
+    students: studentsRes.data ?? [],
+    classes: classesRes.data ?? [],
+    approvals: approvalsRes.data ?? [],
+    feeGatingEnabled: Boolean(settingsRes.data?.fee_gating_enabled),
+    fees: feesRes.data ?? [],
+    passMark: Number(gradingRes.data?.pass_mark ?? 40),
+    activity,
+    actorNames,
+  };
+}

@@ -21,23 +21,23 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Result Prime brand ramp. The 5 stops marked ★ are the exact brand palette;
-        // the others are the canonical companion shades that complete the scale.
+        // Result Prime brand ramp (olive / forest). The 2 stops marked ★ are exact
+        // palette colours; the others are companion shades that complete the scale.
         // Use directly (e.g. `bg-brand-600`, `text-brand-950`) or via the
         // semantic shadcn tokens below, which are driven from these in globals.css.
         brand: {
-          50: "#caf0f8", // ★ Light Cyan
-          100: "#ade8f4",
-          200: "#90e0ef", // ★ Frosted Blue
-          300: "#48cae4",
-          400: "#00b4d8", // ★ Turquoise Surf
-          500: "#0096c7",
-          600: "#0077b6", // ★ Bright Teal Blue
-          700: "#023e8a",
-          800: "#012a63",
-          900: "#03045e", // ★ Deep Twilight
-          950: "#020433",
-          DEFAULT: "#0077b6",
+          50: "#f5f7ec",
+          100: "#e8edd4",
+          200: "#d4ddb2",
+          300: "#bcca88",
+          400: "#9bb05d",
+          500: "#7d9343",
+          600: "#606c38", // ★ Olive Leaf
+          700: "#4d5930",
+          800: "#3b4527",
+          900: "#283618", // ★ Black Forest
+          950: "#19230f",
+          DEFAULT: "#606c38",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

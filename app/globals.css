@@ -3,61 +3,61 @@
 @tailwind utilities;
 
 /*
- * shadcn/ui design tokens as HSL CSS variables, themed with the RPS brand
- * palette. Per-tenant branding (§4.5) overrides --primary / --secondary at
- * runtime by injecting a <style> from school_settings in the (auth) layout.
+ * shadcn/ui design tokens as HSL CSS variables, themed with the Result Prime
+ * brand palette. Per-tenant branding (§4.5) overrides --primary / --secondary
+ * at runtime by injecting a <style> from school_settings in the (auth) layout.
  *
  * Brand palette (also exposed as `brand-*` in tailwind.config.ts):
- *   Deep Twilight  #03045E  hsl(239 94% 19%)   — text, dark surfaces
- *   Bright Teal    #0077B6  hsl(201 100% 36%)  — primary action (light)
- *   Turquoise Surf #00B4D8  hsl(190 100% 42%)  — focus ring, primary (dark)
- *   Frosted Blue   #90E0EF  hsl(188 75% 75%)   — accent surfaces
- *   Light Cyan     #CAF0F8  hsl(190 77% 88%)   — secondary/muted surfaces
+ *   Cornsilk      #fefae0  hsl(52 94% 94%)   — page background / paper
+ *   Olive Leaf    #606c38  hsl(74 32% 32%)   — primary action, brand
+ *   Black Forest  #283618  hsl(88 39% 15%)   — ink, dark surfaces
+ *   Copper        #bc6c25  hsl(28 67% 44%)   — accent / "verified"
+ *   Light Caramel #dda15e  hsl(32 65% 62%)   — soft warm highlight
  */
 @layer base {
   :root {
-    --background: 190 60% 99%; /* near-white, faint cyan */
-    --foreground: 239 64% 15%; /* Deep Twilight */
-    --card: 0 0% 100%;
-    --card-foreground: 239 64% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 239 64% 15%;
-    --primary: 201 100% 36%; /* Bright Teal Blue */
-    --primary-foreground: 190 77% 97%;
-    --secondary: 190 77% 92%; /* Light Cyan */
-    --secondary-foreground: 239 64% 19%;
-    --muted: 192 60% 95%;
-    --muted-foreground: 209 28% 42%;
-    --accent: 188 75% 85%; /* Frosted Blue */
-    --accent-foreground: 239 64% 18%;
+    --background: 52 94% 94%; /* Cornsilk */
+    --foreground: 88 39% 15%; /* Black Forest */
+    --card: 48 86% 98%; /* warm white */
+    --card-foreground: 88 39% 15%;
+    --popover: 48 86% 98%;
+    --popover-foreground: 88 39% 15%;
+    --primary: 74 32% 32%; /* Olive Leaf */
+    --primary-foreground: 52 94% 96%;
+    --secondary: 74 26% 88%; /* pale olive */
+    --secondary-foreground: 88 39% 18%;
+    --muted: 50 56% 91%;
+    --muted-foreground: 80 14% 36%;
+    --accent: 32 60% 87%; /* pale caramel */
+    --accent-foreground: 88 39% 18%;
     --destructive: 0 72% 51%; /* semantic red — kept off-palette on purpose */
     --destructive-foreground: 0 0% 100%;
-    --border: 196 45% 86%;
-    --input: 196 45% 86%;
-    --ring: 190 100% 42%; /* Turquoise Surf */
+    --border: 56 28% 82%;
+    --input: 56 28% 82%;
+    --ring: 74 34% 40%; /* Olive Leaf */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 239 60% 8%; /* deep navy (darker than Deep Twilight) */
-    --foreground: 190 77% 92%; /* Light Cyan */
-    --card: 239 64% 14%; /* Deep Twilight surface */
-    --card-foreground: 190 77% 92%;
-    --popover: 239 64% 12%;
-    --popover-foreground: 190 77% 92%;
-    --primary: 190 100% 42%; /* Turquoise Surf (brighter pops in dark) */
-    --primary-foreground: 239 70% 11%;
-    --secondary: 224 47% 18%;
-    --secondary-foreground: 190 77% 92%;
-    --muted: 224 40% 16%;
-    --muted-foreground: 195 35% 70%; /* frosted, desaturated */
-    --accent: 201 90% 22%; /* dark teal */
-    --accent-foreground: 190 77% 95%;
+    --background: 90 28% 7%; /* near-black forest green */
+    --foreground: 52 60% 90%; /* cornsilk */
+    --card: 88 28% 12%;
+    --card-foreground: 52 60% 90%;
+    --popover: 88 28% 10%;
+    --popover-foreground: 52 60% 90%;
+    --primary: 74 38% 52%; /* brighter olive pops in dark */
+    --primary-foreground: 88 40% 10%;
+    --secondary: 84 16% 20%;
+    --secondary-foreground: 52 60% 90%;
+    --muted: 84 14% 18%;
+    --muted-foreground: 60 16% 68%;
+    --accent: 28 48% 30%; /* dark copper */
+    --accent-foreground: 32 65% 88%;
     --destructive: 0 62% 46%;
     --destructive-foreground: 0 0% 98%;
-    --border: 224 40% 20%;
-    --input: 224 40% 22%;
-    --ring: 190 100% 45%; /* Turquoise Surf */
+    --border: 84 16% 22%;
+    --input: 84 16% 24%;
+    --ring: 74 40% 55%; /* Olive Leaf */
   }
 }
 
