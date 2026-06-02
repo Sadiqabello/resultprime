@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { getAuthContext } from "@/modules/auth/service";
 import { billingService, type BillingView } from "@/modules/billing/service";
-import { startCheckout } from "@/modules/billing/actions";
+import { SubscribeForm } from "@/components/billing/subscribe-form";
 import { can } from "@/lib/authz";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Subscription" };
@@ -59,7 +58,7 @@ export default async function SubscriptionPage({
         </p>
       ) : null}
 
-      {/* Current status */}
+      {/* Current status + usage */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -67,50 +66,46 @@ export default async function SubscriptionPage({
             {status ? <Badge variant={status.variant}>{status.label}</Badge> : <Badge variant="secondary">Trial</Badge>}
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm">
+        <CardContent className="space-y-2 text-sm">
           {sub ? (
             <p className="text-muted-foreground">
-              <span className="font-medium capitalize text-foreground">{sub.plan}</span>
+              <span className="font-medium capitalize text-foreground">Per {sub.plan}</span>
               {sub.amount ? ` · ${sub.currency} ${sub.amount.toLocaleString()}` : ""}
               {sub.currentPeriodEnd ? ` · renews ${new Date(sub.currentPeriodEnd).toLocaleDateString()}` : ""}
             </p>
           ) : (
             <p className="text-muted-foreground">
-              You&apos;re on a trial{view?.trialEndsAt ? ` until ${new Date(view.trialEndsAt).toLocaleDateString()}` : ""}. Choose a plan below to subscribe.
+              You&apos;re on a trial{view?.trialEndsAt ? ` until ${new Date(view.trialEndsAt).toLocaleDateString()}` : ""}. Subscribe below to add more students.
             </p>
           )}
+          {view ? (
+            <p className="text-muted-foreground">
+              Using <span className="font-medium text-foreground tabular-nums">{view.studentsUsed}</span> of{" "}
+              <span className="font-medium text-foreground tabular-nums">{view.studentCap}</span> student slots.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
-      {/* Plans */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {(view?.plans ?? []).map((p) => (
-          <Card key={p.key} className="flex flex-col">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{p.name}</CardTitle>
-              <p className="text-2xl font-semibold">
-                {p.currency} {p.amount.toLocaleString()}
-                <span className="text-sm font-normal text-muted-foreground"> / {p.interval === "annually" ? "year" : "term"}</span>
-              </p>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-between gap-4">
-              <ul className="space-y-1.5 text-sm text-muted-foreground">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <CheckCircle2 className="size-4 text-brand-600" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <form action={startCheckout}>
-                <input type="hidden" name="plan" value={p.key} />
-                <Button type="submit" className="w-full" disabled={!view?.paymentsConfigured}>
-                  {sub?.plan === p.key && sub.status === "active" ? "Renew" : "Subscribe"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Buy / extend slots */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{sub ? "Add or renew student slots" : "Subscribe"}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Pay per student: {view ? `₦${view.pricePerStudent.term}/term or ₦${view.pricePerStudent.session}/session each` : ""}.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {view ? (
+            <SubscribeForm
+              pricePerStudent={view.pricePerStudent}
+              minStudents={view.studentsUsed}
+              disabled={!view.paymentsConfigured}
+              cta={sub?.status === "active" ? "Update subscription" : "Subscribe"}
+            />
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

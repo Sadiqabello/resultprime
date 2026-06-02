@@ -51,7 +51,7 @@ export function ComputeDemo() {
 
         {/* the computing slip */}
         <div className="lg:col-span-7" data-reveal data-delay="1">
-          <div className="relative overflow-hidden rounded-lg border border-[#283618]/15 bg-[#fefae0] shadow-[0_30px_60px_-34px_rgba(40,54,24,0.35)]">
+          <div className="relative overflow-hidden rounded-lg border border-[#283618]/20 bg-white shadow-[0_30px_60px_-34px_rgba(40,54,24,0.35)]">
             <div className="flex items-center justify-between border-b border-[#283618]/12 bg-white px-5 py-3">
               <p className="font-display text-sm font-semibold text-[#283618]">Mathematics · JSS 2 A</p>
               <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: VERIFY }}>
@@ -65,7 +65,7 @@ export function ComputeDemo() {
                 ["Exam · /60", at(2) ? "54" : "—", at(2)],
                 ["Total · /100", at(3) ? "88" : "—", at(3)],
               ].map(([label, val, on], i) => (
-                <div key={i} className="bg-[#fefae0] px-3 py-6">
+                <div key={i} className="bg-white px-3 py-6">
                   <p className="font-sans text-[11px] uppercase tracking-[0.12em] text-[#283618]/40">{label as string}</p>
                   <p className={`mt-2 ${cell(Boolean(on))} ${i === 2 && at(3) ? "!text-[#283618]" : ""}`}>{val as string}</p>
                 </div>

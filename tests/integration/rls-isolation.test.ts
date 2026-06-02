@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import ws from "ws";
+
+// Node < 22 has no native WebSocket, so supabase-js's RealtimeClient (built inside
+// createClient) throws on construction. We never use realtime here, but the client
+// still initialises it — supply `ws` as the transport to keep construction happy.
+const realtime = { transport: ws as unknown as typeof WebSocket };
 
 /**
  * RLS TENANT-ISOLATION SUITE (§20.2 — "non-negotiable").
@@ -60,17 +66,22 @@ async function provisionTenant(admin: SupabaseClient, tag: string): Promise<Tena
     .single();
 
   // A client carrying THIS user's JWT — the same surface the browser uses (anon key + user JWT).
-  const client = createClient(URL!, ANON!);
+  const client = createClient(URL!, ANON!, { realtime });
   await client.auth.signInWithPassword({ email, password });
   return { schoolId, email, studentId: student!.id as string, client };
 }
 
 describe.skipIf(!enabled)("RLS tenant isolation", () => {
-  const admin = createClient(URL!, SRK!, { auth: { persistSession: false } });
+  // Constructed in beforeAll, NOT at collection time: the describe body runs even
+  // when the suite is skipped, and createClient throws on the missing env vars
+  // ("supabaseUrl is required") when RLS_TEST isn't set. Deferring keeps the file
+  // safe to run anywhere, as its docstring promises.
+  let admin: SupabaseClient;
   let a: Tenant;
   let b: Tenant;
 
   beforeAll(async () => {
+    admin = createClient(URL!, SRK!, { auth: { persistSession: false }, realtime });
     a = await provisionTenant(admin, "A");
     b = await provisionTenant(admin, "B");
   }, 30_000);
@@ -101,5 +112,35 @@ describe.skipIf(!enabled)("RLS tenant isolation", () => {
       .from("students")
       .insert({ school_id: b.schoolId, admission_no: "x", first_name: "Mal", last_name: "Icious", status: "active" });
     expect(error).not.toBeNull(); // RLS WITH CHECK rejects cross-tenant insert
+  });
+
+  // The enforce_student_quota trigger is the authoritative backstop for the
+  // per-student cap — independent of the app's pre-insert check. Tenant A already
+  // has exactly 1 active student from provisioning.
+  it("the DB trigger blocks inserts beyond students_paid_for", async () => {
+    // Cap the school at 1 paid slot — it already has 1 student, so it's full.
+    await admin.from("subscriptions").upsert(
+      { school_id: a.schoolId, plan: "term", status: "active", students_paid_for: 1 },
+      { onConflict: "school_id" },
+    );
+    const blocked = await admin
+      .from("students")
+      .insert({ school_id: a.schoolId, admission_no: "Q-2", first_name: "Over", last_name: "Quota", status: "active" });
+    expect(blocked.error).not.toBeNull();
+    expect(blocked.error?.message ?? "").toContain("STUDENT_QUOTA_EXCEEDED");
+
+    // Raising the cap lets the next insert through — proving it's a real cap, not a hard block.
+    await admin.from("subscriptions").upsert(
+      { school_id: a.schoolId, plan: "term", status: "active", students_paid_for: 2 },
+      { onConflict: "school_id" },
+    );
+    const allowed = await admin
+      .from("students")
+      .insert({ school_id: a.schoolId, admission_no: "Q-2", first_name: "Under", last_name: "Quota", status: "active" })
+      .select("id")
+      .single();
+    expect(allowed.error).toBeNull();
+    // Restore A to a single student so this test leaves no residue.
+    if (allowed.data?.id) await admin.from("students").delete().eq("id", allowed.data.id as string);
   });
 });

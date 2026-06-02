@@ -4,7 +4,14 @@ import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { auditService } from "@/modules/audit/service";
-import { PLANS, planByKey, type Plan } from "@/config/plans";
+import {
+  PRICE_PER_STUDENT,
+  MAX_STUDENTS_PURCHASE,
+  isBillingPeriod,
+  priceFor,
+  studentCap,
+  type BillingPeriod,
+} from "@/config/plans";
 import { initializeTransaction, paystackConfigured, verifyTransaction } from "@/lib/paystack";
 import { billingRepository } from "./repository";
 
@@ -12,20 +19,26 @@ export interface BillingView {
   schoolName: string;
   trialEndsAt: string | null;
   paymentsConfigured: boolean;
+  /** Per-student rates (NGN) so the page can render the purchase form. */
+  pricePerStudent: Record<BillingPeriod, number>;
+  /** Active students now vs the cap they can hold (paid-for, else the trial cap). */
+  studentsUsed: number;
+  studentCap: number;
   subscription: {
+    /** "term" | "session" once paid; "trial" before that. */
     plan: string;
     status: string;
     amount: number | null;
     currency: string;
     currentPeriodEnd: string | null;
+    studentsPaidFor: number | null;
   } | null;
-  plans: Plan[];
 }
 
-/** One subscription period from now (annually or termly ≈ 120 days). */
-function periodEnd(interval: Plan["interval"]): string {
+/** One subscription period from now: a term ≈ 120 days, a session ≈ 1 year (3 terms). */
+function periodEnd(period: BillingPeriod): string {
   const d = new Date();
-  if (interval === "annually") d.setFullYear(d.getFullYear() + 1);
+  if (period === "session") d.setFullYear(d.getFullYear() + 1);
   else d.setDate(d.getDate() + 120);
   return d.toISOString();
 }
@@ -33,14 +46,19 @@ function periodEnd(interval: Plan["interval"]): string {
 export const billingService = {
   async getBilling(ctx: AuthContext): Promise<Result<BillingView>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
-    const [{ data: sub }, { data: school }] = await Promise.all([
+    const [{ data: sub }, { data: school }, { count }] = await Promise.all([
       billingRepository.getBySchool(ctx.schoolId),
       billingRepository.getSchool(ctx.schoolId),
+      billingRepository.countActiveStudents(ctx.schoolId),
     ]);
+    const studentsPaidFor = (sub?.students_paid_for as number | null) ?? null;
     return ok({
       schoolName: (school?.name as string) ?? "Your school",
       trialEndsAt: (school?.trial_ends_at as string | null) ?? null,
       paymentsConfigured: paystackConfigured(),
+      pricePerStudent: PRICE_PER_STUDENT,
+      studentsUsed: count ?? 0,
+      studentCap: studentCap(studentsPaidFor),
       subscription: sub
         ? {
             plan: sub.plan as string,
@@ -48,20 +66,36 @@ export const billingService = {
             amount: (sub.amount as number | null) ?? null,
             currency: (sub.currency as string) ?? "NGN",
             currentPeriodEnd: (sub.current_period_end as string | null) ?? null,
+            studentsPaidFor,
           }
         : null,
-      plans: PLANS,
     });
   },
 
-  /** Start a Paystack checkout for a plan; returns the authorization URL to redirect to. */
-  async startCheckout(ctx: AuthContext, planKey: string): Promise<Result<{ authorizationUrl: string }>> {
+  /**
+   * Start a Paystack checkout to pay for `quantity` student slots over a `period`
+   * (term or session). The quantity becomes the school's student quota once paid.
+   * Returns the authorization URL to redirect to.
+   */
+  async startCheckout(
+    ctx: AuthContext,
+    args: { period: BillingPeriod; quantity: number },
+  ): Promise<Result<{ authorizationUrl: string }>> {
     if (!ctx.schoolId) return err("FORBIDDEN", "No school context.");
     if (!can(ctx, "school.configure")) return err("FORBIDDEN", "Only a school admin can manage billing.");
     if (!paystackConfigured()) return err("CONFLICT", "Payments aren't configured yet (PAYSTACK_SECRET_KEY).");
 
-    const plan = planByKey(planKey);
-    if (!plan) return err("VALIDATION", "Unknown plan.");
+    const { period, quantity } = args;
+    if (!isBillingPeriod(period)) return err("VALIDATION", "Choose a billing period (term or session).");
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_STUDENTS_PURCHASE) {
+      return err("VALIDATION", `Enter a number of students between 1 and ${MAX_STUDENTS_PURCHASE.toLocaleString()}.`);
+    }
+    // Can't buy fewer slots than the roster you already have.
+    const { count } = await billingRepository.countActiveStudents(ctx.schoolId);
+    const current = count ?? 0;
+    if (quantity < current) {
+      return err("VALIDATION", `You already have ${current} students — buy at least ${current} slots.`);
+    }
 
     const sb = await createClient();
     const { data: { user } } = await sb.auth.getUser();
@@ -73,13 +107,13 @@ export const billingService = {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const res = await initializeTransaction({
       email,
-      amountKobo: Math.round(plan.amount * 100),
+      amountKobo: Math.round(priceFor(period, quantity) * 100),
       reference,
       callbackUrl: `${base}/subscription/callback`,
-      metadata: { school_id: ctx.schoolId, plan: plan.key },
+      metadata: { school_id: ctx.schoolId, period, quantity },
     });
     if (!res.ok || !res.authorizationUrl) return err("INTERNAL", res.error ?? "Could not start checkout.");
-    logger.info("billing.checkout_started", { schoolId: ctx.schoolId, plan: plan.key, reference });
+    logger.info("billing.checkout_started", { schoolId: ctx.schoolId, period, quantity, reference });
     return ok({ authorizationUrl: res.authorizationUrl });
   },
 
@@ -95,13 +129,21 @@ export const billingService = {
    */
   async applyPayment(args: {
     schoolId: string;
-    planKey: string;
+    period: BillingPeriod;
+    /** The quantity the school chose at checkout (from metadata); used as a fallback. */
+    quantity?: number;
     reference: string;
     amountKobo?: number;
     customerCode?: string;
   }): Promise<Result<{ applied: boolean }>> {
-    const plan = planByKey(args.planKey);
-    const amount = args.amountKobo != null ? args.amountKobo / 100 : plan?.amount ?? null;
+    const period: BillingPeriod = isBillingPeriod(args.period) ? args.period : "session";
+    const amount = args.amountKobo != null ? args.amountKobo / 100 : null;
+
+    // Entitlement is granted on money ACTUALLY received, not on a metadata field a
+    // client could tamper with: slots = amount paid ÷ the per-student rate. Fall back
+    // to the checkout quantity only when the charged amount is unavailable.
+    const studentsPaidFor =
+      amount != null ? Math.max(1, Math.round(amount / PRICE_PER_STUDENT[period])) : args.quantity ?? null;
 
     // Idempotency guard — record the reference before doing anything.
     const rec = await billingRepository.recordPaymentEventViaAdmin({
@@ -120,13 +162,14 @@ export const billingService = {
 
     // Apply. If any write fails, undo the marker so a retry re-applies cleanly.
     const up = await billingRepository.upsertViaAdmin(args.schoolId, {
-      plan: args.planKey,
+      plan: period,
       status: "active",
       provider: "paystack",
       customer_code: args.customerCode ?? null,
       amount,
-      currency: plan?.currency ?? "NGN",
-      current_period_end: periodEnd(plan?.interval ?? "annually"),
+      currency: "NGN",
+      current_period_end: periodEnd(period),
+      students_paid_for: studentsPaidFor,
       last_payment_at: new Date().toISOString(),
     });
     if (up.error) {
@@ -145,9 +188,9 @@ export const billingService = {
       action: "billing.payment_succeeded",
       entityType: "subscription",
       entityId: args.schoolId,
-      metadata: { plan: args.planKey, amountKobo: args.amountKobo ?? null, reference: args.reference },
+      metadata: { period, studentsPaidFor, amountKobo: args.amountKobo ?? null, reference: args.reference },
     });
-    logger.info("billing.payment_applied", { schoolId: args.schoolId, plan: args.planKey, reference: args.reference });
+    logger.info("billing.payment_applied", { schoolId: args.schoolId, period, studentsPaidFor, reference: args.reference });
     return ok({ applied: true });
   },
 
@@ -160,7 +203,8 @@ export const billingService = {
     const data = event.data ?? {};
     const metadata = (data.metadata as Record<string, unknown>) ?? {};
     const schoolId = metadata.school_id as string | undefined;
-    const planKey = (metadata.plan as string | undefined) ?? "standard";
+    const period = (metadata.period as BillingPeriod | undefined) ?? "session";
+    const quantity = Number(metadata.quantity) || undefined;
 
     if (type === "charge.success" && schoolId) {
       const reference = data.reference as string | undefined;
@@ -168,7 +212,8 @@ export const billingService = {
       const customer = (data.customer as { customer_code?: string } | undefined)?.customer_code;
       const res = await this.applyPayment({
         schoolId,
-        planKey,
+        period,
+        quantity,
         reference,
         amountKobo: data.amount as number | undefined,
         customerCode: customer,
@@ -200,7 +245,8 @@ export const billingService = {
     if (schoolId !== ctx.schoolId) return err("FORBIDDEN", "Payment belongs to another school.");
     const applied = await this.applyPayment({
       schoolId,
-      planKey: (v.metadata?.plan as string | undefined) ?? "standard",
+      period: (v.metadata?.period as BillingPeriod | undefined) ?? "session",
+      quantity: Number(v.metadata?.quantity) || undefined,
       reference, // dedupes against the webhook applying the same transaction
       amountKobo: v.amountKobo,
       customerCode: v.customerCode,

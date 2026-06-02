@@ -25,9 +25,9 @@ export function Exhibit({
 }) {
   return (
     <figure
-      className={`overflow-hidden rounded-lg border border-[#0a1130]/12 bg-white shadow-[0_30px_60px_-30px_rgba(10,17,48,0.35)] ${className}`}
+      className={`overflow-hidden rounded-lg border border-[#0a1130]/20 bg-white shadow-[0_30px_60px_-30px_rgba(10,17,48,0.35)] ${className}`}
     >
-      <figcaption className="flex items-center gap-2 border-b border-[#0a1130]/10 bg-[#F3EEE2] px-3 py-2">
+      <figcaption className="flex items-center gap-2 border-b border-[#0a1130]/12 bg-[#0a1130]/[0.04] px-3 py-2">
         <span className="flex gap-1.5">
           <span className="size-2.5 rounded-full bg-[#0a1130]/15" />
           <span className="size-2.5 rounded-full bg-[#0a1130]/15" />

@@ -8,9 +8,21 @@ export const billingRepository = {
     const sb = await createClient();
     return sb
       .from("subscriptions")
-      .select("plan, status, amount, currency, current_period_end, last_payment_at")
+      .select("plan, status, amount, currency, current_period_end, last_payment_at, students_paid_for")
       .eq("school_id", schoolId)
       .maybeSingle();
+  },
+
+  /** Active-roster size for this school — the figure the per-student quota counts.
+   *  Same predicate as the enforce_student_quota trigger and studentsRepository.countActive. */
+  async countActiveStudents(schoolId: string) {
+    const sb = await createClient();
+    return sb
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", schoolId)
+      .is("deleted_at", null)
+      .eq("status", "active");
   },
 
   async getSchool(schoolId: string) {

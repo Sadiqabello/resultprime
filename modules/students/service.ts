@@ -1,6 +1,8 @@
 import "server-only";
 import { can, type AuthContext } from "@/lib/authz";
 import { requireWritableTenant } from "@/modules/billing/access";
+import { billingRepository } from "@/modules/billing/repository";
+import { studentCap } from "@/config/plans";
 import { err, ok, type Result } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/modules/audit/service";
@@ -37,6 +39,10 @@ export interface ClassOption {
 
 function classLabel(c: { name: string; arm: string | null }) {
   return c.arm ? `${c.name} ${c.arm}` : c.name;
+}
+
+function quotaMessage(cap: number): string {
+  return `You've reached your paid limit of ${cap} student${cap === 1 ? "" : "s"}. Increase your subscription on the Subscription page to add more.`;
 }
 
 export const studentsService = {
@@ -82,12 +88,24 @@ export const studentsService = {
     const parsed = createStudentSchema.safeParse(input);
     if (!parsed.success) return err("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid student details.");
 
+    // Per-student quota: the active roster can't exceed what the school paid for
+    // (or the trial cap). The enforce_student_quota DB trigger is the atomic
+    // backstop; this is the friendly, pre-insert check. See config/plans.ts.
+    const { data: sub } = await billingRepository.getBySchool(ctx.schoolId);
+    const cap = studentCap((sub?.students_paid_for as number | null) ?? null);
+    const { count } = await studentsRepository.countActive(ctx.schoolId);
+    if ((count ?? 0) >= cap) {
+      return err("CONFLICT", quotaMessage(cap));
+    }
+
     const { data: term } = await studentsRepository.getCurrentTermContext(ctx.schoolId);
     if (!term) return err("CONFLICT", "Set a current term in Settings before enrolling students.");
 
     const { data: student, error } = await studentsRepository.create(ctx.schoolId, parsed.data, ctx.userId);
     if (error || !student) {
       if (error?.code === "23505") return err("CONFLICT", "A student with that admission number exists.");
+      // The quota trigger fired (a concurrent create raced past the check above).
+      if (error?.message?.includes("STUDENT_QUOTA_EXCEEDED")) return err("CONFLICT", quotaMessage(cap));
       return err("INTERNAL", error?.message ?? "Could not create student.");
     }
     const studentId = student.id as string;

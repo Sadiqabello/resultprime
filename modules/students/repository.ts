@@ -34,6 +34,18 @@ export const studentsRepository = {
       .order("name", { ascending: true });
   },
 
+  /** Active-roster size — what the per-student quota counts. Same predicate as the
+   *  enforce_student_quota trigger, so the app check and the DB backstop agree. */
+  async countActive(schoolId: string) {
+    const sb = await createClient();
+    return sb
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", schoolId)
+      .is("deleted_at", null)
+      .eq("status", "active");
+  },
+
   /** Current term + its session — needed to create an enrolment. */
   async getCurrentTermContext(schoolId: string) {
     const sb = await createClient();

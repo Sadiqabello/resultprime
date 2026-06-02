@@ -1380,6 +1380,7 @@ export type Database = {
           currency: string;
           current_period_end: string | null;
           last_payment_at: string | null;
+          students_paid_for: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -1395,6 +1396,7 @@ export type Database = {
           currency?: string;
           current_period_end?: string | null;
           last_payment_at?: string | null;
+          students_paid_for?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1410,6 +1412,7 @@ export type Database = {
           currency?: string;
           current_period_end?: string | null;
           last_payment_at?: string | null;
+          students_paid_for?: number | null;
           created_at?: string;
           updated_at?: string;
         };

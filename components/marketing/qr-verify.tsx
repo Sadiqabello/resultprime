@@ -25,7 +25,7 @@ export async function QrVerify({ value, className = "" }: { value?: string; clas
 
   return (
     <span
-      className={`flex items-center gap-2.5 rounded-lg border border-[#0a1130]/12 bg-white/95 p-2 shadow-[0_12px_28px_-12px_rgba(10,17,48,0.4)] backdrop-blur ${className}`}
+      className={`flex items-center gap-2.5 rounded-lg border border-[#0a1130]/20 bg-white/95 p-2 shadow-[0_12px_28px_-12px_rgba(10,17,48,0.4)] backdrop-blur ${className}`}
     >
       <span className="block size-12 shrink-0 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
       <span className="pr-1 font-sans text-[10px] font-bold uppercase leading-tight tracking-[0.14em]" style={{ color: VERIFY }}>

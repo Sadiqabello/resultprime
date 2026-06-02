@@ -2,15 +2,15 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ArrowUpRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LogoMark } from "@/components/brand/logo";
-import { PLANS } from "@/config/plans";
+import { LogoMark, LogoMarkMono } from "@/components/brand/logo";
+import { PRICE_PER_STUDENT, TRIAL_STUDENT_CAP } from "@/config/plans";
 import { ScrollFx } from "@/components/marketing/scroll-fx";
+import { SectionNav, type SectionNavItem } from "@/components/marketing/section-nav";
 import { Exhibit } from "@/components/marketing/exhibit";
 import { exhibitImages } from "@/components/marketing/exhibits-data";
 import { ExhibitTabs } from "@/components/marketing/exhibit-tabs";
 import { ComputeDemo } from "@/components/marketing/compute-demo";
 import { QrVerify } from "@/components/marketing/qr-verify";
-import { AuditRail } from "@/components/marketing/audit-rail";
 import { PricingTiers, type PricingTier } from "@/components/marketing/pricing-tiers";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 const VERIFY = "#bc6c25";
 // PLACEHOLDER: real channels for "Book a walkthrough" / "Talk to us"
 const CONTACT = {
-  whatsapp: "https://wa.me/2340000000000",
+  whatsapp: "https://wa.me/2348105007605?text=Hi%20Result%20Prime%20team%2C%20I%27d%20like%20to%20book%20a%20walkthrough%20and%20learn%20more%20about%20your%20product.",
   email: "mailto:hello@resultprime.com?subject=Result%20Prime%20walkthrough",
 };
 
@@ -47,7 +47,7 @@ function Metrics() {
     { v: "0", suffix: "", label: "silent edits — every change is logged" },
   ];
   return (
-    <section className="border-y border-[#283618]/12 bg-[#f1ead0]/50">
+    <section className="border-y border-[#283618]/15 bg-white">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-14 lg:grid-cols-4" data-reveal>
         {stats.map((s) => (
           <div key={s.label} className="text-center">
@@ -72,7 +72,6 @@ export default function LandingPage() {
       <RegisterStyles />
       <OrgSchema />
       <ScrollFx />
-      <AuditRail />
       <Masthead />
       <main>
         <Hero />
@@ -150,28 +149,18 @@ function Wordmark() {
 }
 
 function Masthead() {
-  const links = [
-    ["#how", "How it works"],
-    ["#features", "The engine"],
-    ["#security", "On the record"],
-    ["#pricing", "Fees"],
-    ["#faq", "Appendix"],
+  const links: SectionNavItem[] = [
+    { href: "#how", label: "How it works" },
+    { href: "#features", label: "The engine" },
+    { href: "#security", label: "On the record" },
+    { href: "#pricing", label: "Fees" },
+    { href: "#faq", label: "Appendix" },
   ];
   return (
-    <header className="sticky top-0 z-50 border-b-[3px] border-double border-[#283618]/25 bg-[#fefae0]/90 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b-[3px] border-double border-[#283618]/25 bg-white/90 backdrop-blur-sm">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Wordmark />
-        <div className="hidden items-center gap-6 lg:flex">
-          {links.map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[#283618]/55 transition-colors hover:text-[#283618]"
-            >
-              {label}
-            </a>
-          ))}
-        </div>
+        <SectionNav items={links} />
         <div className="flex items-center gap-1.5">
           <a href={CONTACT.whatsapp} className="hidden items-center gap-1.5 px-2 font-sans text-sm font-medium text-[#283618] hover:opacity-70 md:inline-flex">
             <MessageCircle className="size-4" /> Talk to us
@@ -248,7 +237,7 @@ function Hero() {
       </div>
 
       {/* trust facts on a rule */}
-      <div className="border-y border-[#283618]/12 bg-[#f1ead0]/60">
+      <div className="border-y border-[#283618]/15 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-6 py-3.5 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-[#283618]/55">
           {facts.map((f, i) => (
             <span key={f} className="inline-flex items-center gap-6">
@@ -331,17 +320,17 @@ function HowItWorks() {
     ["04", "Publish & seal", "Release to parents and print branded, QR-verified report cards for the whole class."],
   ];
   return (
-    <section id="how" className="scroll-mt-20 border-y border-[#283618]/12 bg-[#f1ead0]/50">
+    <section id="how" className="scroll-mt-20 border-y border-[#283618]/15 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
         <div data-reveal><Kicker>How it works</Kicker></div>
         <h2 className="mt-5 max-w-2xl font-display text-3xl font-medium tracking-tight text-[#283618] sm:text-4xl" data-reveal>
           Four entries, start to finish.
         </h2>
-        <div className="mt-12 grid gap-px overflow-hidden border-y border-[#283618]/12 md:grid-cols-2 lg:grid-cols-4 lg:border lg:border-[#283618]/12">
+        <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-[#283618]/15 bg-[#283618]/[0.08] shadow-[0_24px_50px_-34px_rgba(40,54,24,0.4)] md:grid-cols-2 lg:grid-cols-4">
           {steps.map(([n, title, desc], i) => (
             <div
               key={n}
-              className="border-t border-[#283618]/12 bg-[#fefae0] p-7 first:border-t-0 md:border-t-0 lg:border-l lg:border-t-0 lg:first:border-l-0"
+              className="bg-white p-7"
               data-reveal
               data-delay={(i + 1) as 1 | 2 | 3 | 4}
             >
@@ -391,7 +380,7 @@ function Engine() {
     ["Civic Education", "90", "92", "Exam officer", "13 May · 09:02"],
   ];
   return (
-    <section id="features" className="scroll-mt-20 border-t border-[#283618]/12 bg-[#f1ead0]/50">
+    <section id="features" className="scroll-mt-20 border-t border-[#283618]/15 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-5" data-reveal>
@@ -403,7 +392,7 @@ function Engine() {
               The same scores always produce the same result. And when anyone asks
               how a grade was reached, the answer is one click away.
             </p>
-            <dl className="mt-8 divide-y divide-[#283618]/10 border-y border-[#283618]/12">
+            <dl className="mt-8 divide-y divide-[#283618]/15 border-y border-[#283618]/15">
               {points.map(([t, d]) => (
                 <div key={t} className="py-4">
                   <dt className="font-display text-[17px] font-semibold text-[#283618]">{t}</dt>
@@ -415,8 +404,8 @@ function Engine() {
 
           {/* crafted audit ledger artifact */}
           <div className="lg:col-span-7" data-reveal data-delay="1">
-            <div className="overflow-hidden rounded-lg border border-[#283618]/15 bg-[#fefae0] shadow-[0_30px_60px_-34px_rgba(10,17,48,0.3)]">
-              <div className="flex items-center justify-between border-b border-[#283618]/12 bg-white px-5 py-3">
+            <div className="overflow-hidden rounded-lg border border-[#283618]/20 bg-white shadow-[0_30px_60px_-34px_rgba(10,17,48,0.3)]">
+              <div className="flex items-center justify-between border-b border-[#283618]/15 bg-white px-5 py-3">
                 <p className="font-display text-sm font-semibold text-[#283618]">Audit trail — JSS 2 A · First Term</p>
                 <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: VERIFY }}>
                   Append-only
@@ -424,7 +413,7 @@ function Engine() {
               </div>
               <table className="w-full text-left font-sans text-[13px]">
                 <thead>
-                  <tr className="border-b border-[#283618]/12 text-[11px] uppercase tracking-[0.12em] text-[#283618]/40">
+                  <tr className="border-b border-[#283618]/15 text-[11px] uppercase tracking-[0.12em] text-[#283618]/40">
                     <th className="px-5 py-2.5 font-semibold">Subject</th>
                     <th className="px-2 py-2.5 text-right font-semibold">From</th>
                     <th className="px-2 py-2.5 text-right font-semibold">To</th>
@@ -444,7 +433,7 @@ function Engine() {
                   ))}
                 </tbody>
               </table>
-              <p className="border-t border-[#283618]/12 bg-white px-5 py-2.5 font-sans text-[11px] text-[#283618]/45">
+              <p className="border-t border-[#283618]/15 bg-white px-5 py-2.5 font-sans text-[11px] text-[#283618]/45">
                 Every entry is permanent. Nothing happens off the record.
               </p>
             </div>
@@ -581,9 +570,9 @@ function Classrooms() {
           </a>
         </div>
         <dl className="lg:col-span-7" data-reveal data-delay="1">
-          <div className="border-t border-[#283618]/12">
+          <div className="border-t border-[#283618]/15">
             {items.map(([t, d], i) => (
-              <div key={t} className="flex gap-6 border-b border-[#283618]/12 py-6">
+              <div key={t} className="flex gap-6 border-b border-[#283618]/15 py-6">
                 <span className="font-display text-sm tabular-nums text-[#283618]/30">{String(i + 1).padStart(2, "0")}</span>
                 <div>
                   <dt className="font-display text-lg font-semibold text-[#283618]">{t}</dt>
@@ -601,32 +590,29 @@ function Classrooms() {
 /* ── Pricing ("Fees schedule") ──────────────────────────────────────────── */
 function Pricing() {
   const ngn = (n: number) => `₦${n.toLocaleString("en-NG")}`;
-  const standard = PLANS.find((p) => p.key === "standard");
-  const pro = PLANS.find((p) => p.key === "pro");
-  const perStudent = standard ? Math.round(standard.amount / standard.maxStudents) : null;
 
   const tiers: PricingTier[] = [
-    { name: "Trial", annual: null, freeLabel: "Free", unitYear: "14 days", desc: "Set up your school and print a sample report card. No card required.", features: ["Full feature access", "Report cards & broadsheets", "Bulk Excel import"], cta: "Start free", featured: false },
-    { name: standard?.name ?? "Standard", annual: standard?.amount ?? null, unitYear: "/ year", desc: "Everything a school needs to run results end to end.", features: standard?.features ?? [], cta: "Create your school", featured: true },
-    { name: pro?.name ?? "Pro", annual: pro?.amount ?? null, unitYear: "/ year", desc: "For larger schools that need branding and priority support.", features: pro?.features ?? [], cta: "Choose Pro", featured: false },
+    { name: "Trial", price: "Free", unit: "14 days", desc: "Set up your school and print a sample report card. No card required.", features: [`Up to ${TRIAL_STUDENT_CAP} students`, "Full feature access", "Bulk Excel import"], cta: "Start free", featured: false },
+    { name: "Per term", price: ngn(PRICE_PER_STUDENT.term), unit: "/ student / term", note: "billed each term", desc: "Pay only for the students you have, one term at a time.", features: ["Unlimited teachers", "Report cards & broadsheets", "Pay as you grow"], cta: "Create your school", featured: true },
+    { name: "Per session", price: ngn(PRICE_PER_STUDENT.session), unit: "/ student / session", note: "covers all 3 terms", desc: "Settle the whole session up front and forget about termly renewals.", features: ["Everything in Per term", "One payment for the year", "Priority support"], cta: "Choose session", featured: false },
   ];
 
   return (
-    <section id="pricing" className="scroll-mt-20 border-y border-[#283618]/12 bg-[#f1ead0]/50">
+    <section id="pricing" className="scroll-mt-20 border-y border-[#283618]/15 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
         <div className="flex flex-wrap items-end justify-between gap-4" data-reveal>
           <div>
             <Kicker>Fees schedule</Kicker>
-            <h2 className="mt-5 font-display text-3xl font-medium tracking-tight text-[#283618] sm:text-4xl">One price for your whole school.</h2>
+            <h2 className="mt-5 font-display text-3xl font-medium tracking-tight text-[#283618] sm:text-4xl">Pay per student, nothing more.</h2>
           </div>
           <p className="max-w-xs font-sans text-[13px] leading-relaxed text-[#283618]/50">
-            Unlimited teachers, no per-seat fees{perStudent ? ` — from about ${ngn(perStudent)} per student a year.` : "."}
+            Unlimited teachers, no per-seat fees — just {ngn(PRICE_PER_STUDENT.term)} per student a term, or {ngn(PRICE_PER_STUDENT.session)} for the full session.
           </p>
         </div>
 
         <PricingTiers tiers={tiers} />
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#283618]/12 pt-7 sm:flex-row" data-reveal>
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#283618]/15 pt-7 sm:flex-row" data-reveal>
           <p className="font-sans text-[14px] text-[#5b6048]">
             <span className="font-display text-[16px] font-semibold text-[#283618]">Running many schools?</span>{" "}
             Proprietors and groups get one console, custom subdomains and onboarding help.
@@ -662,7 +648,7 @@ function Faq() {
       <h2 className="mt-5 font-display text-3xl font-medium tracking-tight text-[#283618] sm:text-4xl" data-reveal>Questions, answered.</h2>
       <div className="mt-10 border-t border-[#283618]/15" data-reveal>
         {FAQS.map((f, i) => (
-          <details key={f.q} className="group border-b border-[#283618]/12 [&_summary::-webkit-details-marker]:hidden">
+          <details key={f.q} className="group border-b border-[#283618]/15 [&_summary::-webkit-details-marker]:hidden">
             <summary className="flex cursor-pointer list-none items-baseline gap-4 py-5">
               <span className="font-display text-sm tabular-nums text-[#283618]/30">{String(i + 1).padStart(2, "0")}</span>
               <span className="flex-1 font-display text-[18px] font-medium text-[#283618]">{f.q}</span>
@@ -714,41 +700,64 @@ function Colophon() {
     { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
   ];
   return (
-    <footer className="border-t-[3px] border-double border-[#283618]/25 bg-[#fefae0]">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+    <footer className="relative overflow-hidden bg-[#283618] text-white">
+      {/* Links + identity */}
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 pt-16 pb-12 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
-          <Wordmark />
-          <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-[#5b6048]">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="Result Prime">
+            <LogoMarkMono className="h-7 w-auto text-[#fefae0]" />
+            <span className="font-display text-lg tracking-tight text-[#fefae0]">
+              <span className="font-normal">Result</span> <span className="font-semibold">Prime</span>
+            </span>
+          </Link>
+          <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-white/65">
             The official record of every child&apos;s term — audited, branded and
             QR-verified. Built for real classrooms.
           </p>
-          <div className="mt-5 flex flex-col gap-1.5 font-sans text-sm text-[#5b6048]">
-            <a href={CONTACT.whatsapp} className="inline-flex items-center gap-2 hover:text-[#283618]">
+          <div className="mt-5 flex flex-col gap-1.5 font-sans text-sm text-white/70">
+            <a href={CONTACT.whatsapp} className="inline-flex items-center gap-2 hover:text-white">
               <MessageCircle className="size-4" /> Chat on WhatsApp
             </a>
-            <a href={CONTACT.email} className="inline-flex items-center gap-2 hover:text-[#283618]">
+            <a href={CONTACT.email} className="inline-flex items-center gap-2 hover:text-white">
               <ArrowRight className="size-4" /> hello@resultprime.com
             </a>
           </div>
         </div>
         {cols.map((col) => (
           <div key={col.title}>
-            <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[#283618]/45">{col.title}</p>
+            <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[#fefae0]/55">{col.title}</p>
             <ul className="mt-3 space-y-2">
               {col.links.map(([label, href]) => (
                 <li key={label}>
-                  <Link href={href} className="text-[14px] text-[#5b6048] hover:text-[#283618]">{label}</Link>
+                  <Link href={href} className="text-[14px] text-white/65 hover:text-white">{label}</Link>
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
-      <div className="border-t border-[#283618]/12">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-6 font-sans text-[12px] text-[#283618]/45 sm:flex-row">
-          <p>© {new Date().getFullYear()} Result Prime. Results, at their prime.</p>
-          <p className="inline-flex items-center gap-1.5">Made in Nigeria for African schools</p>
+
+      {/* Fine print + colophon */}
+      <div className="border-t border-white/12">
+        <div className="mx-auto grid max-w-6xl gap-6 px-6 py-8 md:grid-cols-[auto_1fr] md:items-start md:gap-10">
+          <div className="flex items-center gap-2 font-display text-sm font-semibold text-[#fefae0]">
+            <LogoMarkMono className="h-6 w-auto text-[#fefae0]" /> Result Prime
+          </div>
+          <p className="max-w-3xl font-sans text-[12px] leading-relaxed text-white/45">
+            Result Prime is result-processing software for schools — not an examination,
+            accreditation or government body. Schools own their data and stay responsible
+            for the accuracy of the scores they enter and the records they publish.
+            NDPR-aligned; export your data any time. Made in Nigeria for African schools.
+            © {new Date().getFullYear()} Result Prime. All rights reserved.
+          </p>
         </div>
+      </div>
+
+      {/* Oversized sign-off — gradient wordmark bleeding off the bottom edge */}
+      <div className="mx-auto max-w-6xl overflow-hidden px-6" aria-hidden="true">
+        <p className="mb-[-0.12em] mt-4 select-none whitespace-nowrap bg-gradient-to-b from-[#fefae0]/30 via-[#fefae0]/10 to-transparent bg-clip-text font-display font-medium leading-[0.8] tracking-[-0.035em] text-transparent text-[clamp(1.9rem,8.6vw,6.75rem)]">
+          Results, at their prime.
+        </p>
       </div>
     </footer>
   );
@@ -757,7 +766,7 @@ function Colophon() {
 /* ── Sticky mobile CTA ──────────────────────────────────────────────────── */
 function MobileCtaBar() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#283618]/15 bg-[#fefae0]/95 px-4 py-3 backdrop-blur-md md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#283618]/15 bg-white/95 px-4 py-3 backdrop-blur-md md:hidden">
       <div className="flex items-center gap-2">
         <Button asChild className="h-11 flex-1 rounded-sm bg-[#283618] hover:bg-[#283618]/90">
           <Link href="/signup">Create your school</Link>
@@ -777,7 +786,7 @@ function RegisterStyles() {
   return (
     <style>{`
       .rp-root{
-        background-color:#fefae0;
+        background-color:#ffffff;
         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
       }
       @media (prefers-reduced-motion: no-preference){

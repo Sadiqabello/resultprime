@@ -1,8 +1,7 @@
 import { signOut } from "@/modules/auth/actions";
-import { startCheckout } from "@/modules/billing/actions";
-import { PLANS } from "@/config/plans";
+import { PRICE_PER_STUDENT } from "@/config/plans";
+import { SubscribeForm } from "@/components/billing/subscribe-form";
 import { LogoMark } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
 
 /**
  * Shown by the (auth) layout when a tenant's trial/subscription has lapsed past
@@ -20,7 +19,6 @@ export function LockedScreen({
   canRenew: boolean;
   trialExpired: boolean;
 }) {
-  const ngn = (n: number) => `₦${n.toLocaleString("en-NG")}`;
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-6 px-6 py-16 text-center">
       <LogoMark className="h-9 w-auto" />
@@ -35,18 +33,8 @@ export function LockedScreen({
       </div>
 
       {canRenew ? (
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          {PLANS.map((p) => (
-            <form key={p.key} action={startCheckout} className="rounded-2xl border border-border bg-card p-6 text-left">
-              <input type="hidden" name="plan" value={p.key} />
-              <p className="font-display text-lg font-semibold text-brand-950">{p.name}</p>
-              <p className="mt-1 font-display text-2xl font-semibold text-brand-700">
-                {ngn(p.amount)} <span className="text-sm font-normal text-muted-foreground">/ year</span>
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">Up to {p.maxStudents.toLocaleString()} students.</p>
-              <Button type="submit" className="mt-4 w-full">Subscribe</Button>
-            </form>
-          ))}
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-left">
+          <SubscribeForm pricePerStudent={PRICE_PER_STUDENT} cta="Subscribe" />
         </div>
       ) : (
         <p className="rounded-lg border border-dashed border-border px-5 py-4 text-sm text-muted-foreground">

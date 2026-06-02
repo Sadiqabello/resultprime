@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signIn, type AuthFormState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 export function SignInForm({ redirectTo }: { redirectTo?: string }) {
@@ -33,10 +34,9 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
         />
