@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogoMark, LogoMarkMono } from "@/components/brand/logo";
 import { PRICE_PER_STUDENT, TRIAL_STUDENT_CAP } from "@/config/plans";
+import { siteConfig } from "@/config/site";
 import { ScrollFx } from "@/components/marketing/scroll-fx";
 import { SectionNav, type SectionNavItem } from "@/components/marketing/section-nav";
 import { Exhibit } from "@/components/marketing/exhibit";
@@ -17,6 +18,11 @@ export const metadata: Metadata = {
   title: "Trusted result processing for primary & secondary schools",
   description:
     "Result Prime is the official record of every child's term — audited scores, ranked positions, and branded, QR-verified report cards. Computed the same way every time, locked on approval. Built for African classrooms.",
+  // No openGraph override here on purpose: a page-level openGraph REPLACES the
+  // root's wholesale (Next merges metadata keys shallowly), which would drop the
+  // shared og:type/site_name/locale and the auto opengraph-image. The root's
+  // openGraph already describes the site well for the homepage.
+  alternates: { canonical: "/" },
 };
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -801,11 +807,48 @@ function RegisterStyles() {
 
 /* ── SEO: Organization + FAQ structured data ────────────────────────────── */
 function OrgSchema() {
+  const { url, name, slogan, description, email } = siteConfig;
   const json = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", name: "Result Prime", description: "Audited, branded, QR-verified result processing for primary & secondary schools.", slogan: "Results, at their prime." },
-      { "@type": "FAQPage", mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
+      {
+        "@type": "Organization",
+        "@id": `${url}/#organization`,
+        name,
+        url,
+        logo: `${url}/icon.svg`,
+        description: "Audited, branded, QR-verified result processing for primary & secondary schools.",
+        slogan,
+        email,
+        areaServed: "Africa",
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${url}/#website`,
+        url,
+        name,
+        description,
+        inLanguage: "en",
+        publisher: { "@id": `${url}/#organization` },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name,
+        applicationCategory: "EducationalApplication",
+        operatingSystem: "Web",
+        description,
+        offers: {
+          "@type": "Offer",
+          price: String(PRICE_PER_STUDENT.term),
+          priceCurrency: "NGN",
+          description: `₦${PRICE_PER_STUDENT.term} per student per term`,
+        },
+        publisher: { "@id": `${url}/#organization` },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
     ],
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }} />;

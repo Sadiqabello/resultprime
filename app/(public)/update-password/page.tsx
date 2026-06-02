@@ -5,7 +5,7 @@ import { UpdatePasswordForm } from "@/modules/auth/components/update-password-fo
 import { tenancyService } from "@/modules/tenancy/service";
 import { TENANT_SLUG_HEADER } from "@/config/constants";
 
-export const metadata: Metadata = { title: "Set your password" };
+export const metadata: Metadata = { title: "Set your password", robots: { index: false, follow: false } };
 
 export default async function UpdatePasswordPage() {
   // Theme to the school when on its subdomain (middleware set the header).

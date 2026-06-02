@@ -5,7 +5,11 @@ import { SignInForm } from "@/modules/auth/components/sign-in-form";
 import { tenancyService } from "@/modules/tenancy/service";
 import { TENANT_SLUG_HEADER } from "@/config/constants";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to Result Prime to manage scores, approvals and report cards for your school.",
+  alternates: { canonical: "/login" },
+};
 
 const NOTICES: Record<string, string> = {
   link_invalid:

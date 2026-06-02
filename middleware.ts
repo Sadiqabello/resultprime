@@ -59,6 +59,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and image optimization.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Run on everything except static assets, image optimization, and the public
+  // SEO endpoints (robots/sitemap/manifest/OG image) — those must be reachable by
+  // crawlers without hitting the auth gate.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

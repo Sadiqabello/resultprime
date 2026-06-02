@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy — Result Prime",
   description: "How Result Prime collects, uses, and protects personal data, including students' data.",
+  alternates: { canonical: "/privacy" },
 };
 
 const UPDATED = "24 May 2026";

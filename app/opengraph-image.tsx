@@ -4,6 +4,9 @@ import { ImageResponse } from "next/og";
  * Social share card (1200×630). Next auto-wires this as the site's OpenGraph +
  * Twitter image. Editorial/"register" styling to match the landing page.
  */
+// Edge runtime: next/og's ImageResponse renders cleanly here; the Node runtime
+// fails to statically prerender this at build time. The "edge disables static
+// generation" build note is expected and harmless.
 export const runtime = "edge";
 export const alt = "Result Prime — the official record of every child's term";
 export const size = { width: 1200, height: 630 };

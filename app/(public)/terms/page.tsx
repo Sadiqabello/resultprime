@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Service — Result Prime",
   description: "The terms governing use of the Result Prime result-processing platform.",
+  alternates: { canonical: "/terms" },
 };
 
 const UPDATED = "24 May 2026";

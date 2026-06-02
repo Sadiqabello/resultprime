@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/modules/auth/service";
 import { isSuperAdmin } from "@/lib/authz";
 import { PlatformShell } from "@/components/layout/platform-shell";
+
+// Private platform console — never index.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * Platform console layout. Cross-tenant by design — only platform super admins

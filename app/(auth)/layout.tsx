@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getAuthContext } from "@/modules/auth/service";
@@ -10,6 +11,9 @@ import { LockedScreen } from "@/components/layout/locked-screen";
 import { GraceBanner } from "@/components/layout/grace-banner";
 import { WrongSchoolScreen } from "@/components/layout/wrong-school-screen";
 import { TENANT_SLUG_HEADER } from "@/config/constants";
+
+// The authenticated app is private — keep every route out of search indexes.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * Authenticated app shell. Guards every route under (auth): no valid session →
