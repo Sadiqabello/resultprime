@@ -25,7 +25,7 @@ jobs:
       NEXT_PUBLIC_ROOT_DOMAIN: example.com
       CRON_SECRET: ci-cron-secret-0123456789
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -51,7 +51,7 @@ jobs:
     name: RLS tenant-isolation (real Postgres)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
